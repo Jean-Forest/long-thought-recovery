@@ -4,6 +4,12 @@
 
 > 현재 버전은 개인 기록용 정적 웹앱입니다. 서버가 없고, 로그인도 없으며, 기록은 사용자의 브라우저 localStorage에 저장됩니다.
 
+
+## Live App
+
+https://jean-forest.github.io/long-thought-recovery/
+
+
 ## 핵심 기능
 
 - 8주 회복 루틴 대시보드
