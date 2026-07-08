@@ -1,0 +1,12 @@
+{
+  "name": "8주 Long Thought 회복 앱 v2",
+  "short_name": "Deep Thinking",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#111827",
+  "description": "8주 동안 긴 생각, 계산, 시각화, 독서, 수면, 운동을 기록하고 훈련하는 개인 회복 루틴 앱",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
