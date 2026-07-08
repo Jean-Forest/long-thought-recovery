@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>8주 Long Thought 회복 앱 v2</title>
+  <title>Long Thought Recovery v0.3.0</title>
   <meta name="theme-color" content="#111827">
   <meta name="description" content="Long Thought, 계산, 시각화, 독서, 수면, 운동을 8주간 기록하고 훈련하는 개인 회복 루틴 앱">
   <link rel="manifest" href="manifest.json">
@@ -16,11 +16,12 @@
         <div class="brand-mark">8W</div>
         <div>
           <h1>Deep Thinking</h1>
-          <p>8주 회복 루틴 v2</p>
+          <p>8주 회복 루틴 v0.3.0</p>
         </div>
       </div>
       <nav class="nav">
-        <button class="nav-btn active" data-view="dashboard">대시보드</button>
+        <button class="nav-btn active" data-view="flow">오늘 플로우</button>
+        <button class="nav-btn" data-view="dashboard">대시보드</button>
         <button class="nav-btn" data-view="train">훈련 실행</button>
         <button class="nav-btn" data-view="daily">오늘 체크</button>
         <button class="nav-btn" data-view="analytics">그래프</button>
@@ -34,7 +35,81 @@
     </aside>
 
     <main class="main">
-      <section id="dashboard" class="view active-view">
+      <section id="flow" class="view active-view">
+        <div class="flow-hero">
+          <div>
+            <p class="eyebrow">Daily Flow v0.3.0</p>
+            <h2 id="flowTodayTitle">오늘은 1주차 월요일입니다.</h2>
+            <p class="hero-copy" id="flowTodaySub">오늘의 Long Thought를 시작하고, 저녁에는 회복 지표를 기록하세요.</p>
+          </div>
+          <div class="flow-hero-card">
+            <span>오늘 목표</span>
+            <strong id="flowTargetMinutes">20분</strong>
+            <small id="flowTargetLabel">Long Thought</small>
+          </div>
+        </div>
+
+        <div class="flow-grid">
+          <section class="panel flow-main-card">
+            <div class="panel-head">
+              <h3>아침 · Long Thought</h3>
+              <span id="flowWeekBadge" class="pill">Week 1</span>
+            </div>
+            <p class="flow-question-label">오늘의 Long Thought 질문</p>
+            <blockquote id="flowLongQuestion" class="flow-question">질문을 불러오는 중입니다.</blockquote>
+            <div class="flow-timer-display" id="flowTimerDisplay">20:00</div>
+            <div class="flow-actions">
+              <button id="flowTimerStart" class="primary">START</button>
+              <button id="flowTimerPause" class="secondary">일시정지</button>
+              <button id="flowTimerReset" class="secondary">리셋</button>
+              <button id="flowTimerComplete" class="secondary">완료 처리</button>
+            </div>
+            <p class="muted timer-help">완료 처리하면 오늘 Long Thought 기록에 목표 시간이 반영됩니다. 타이머가 끝나면 저널 입력칸이 열립니다.</p>
+
+            <div id="flowPostSession" class="post-session hidden">
+              <h4>20분 후 기록</h4>
+              <label>오늘 떠오른 생각을 적어보세요.<textarea id="flowSessionNote" rows="4" placeholder="예: 처음 8분은 산만했지만, 12분 이후 질문이 조금 붙기 시작했다."></textarea></label>
+              <button id="flowSaveSessionNote" class="primary">저널 저장</button>
+            </div>
+          </section>
+
+          <aside class="panel feedback-card">
+            <div class="panel-head">
+              <h3>최근 7일 피드백</h3>
+              <span class="muted">자동 계산</span>
+            </div>
+            <div id="flowFeedback" class="feedback-list"></div>
+          </aside>
+        </div>
+
+        <section class="panel evening-panel">
+          <div class="panel-head">
+            <h3>저녁 · 회복 체크인</h3>
+            <span class="muted">1점 낮음 · 5점 매우 좋음</span>
+          </div>
+          <div class="evening-grid">
+            <div class="rating-block">
+              <strong>오늘 시각화는 어땠나요?</strong>
+              <div class="star-rating" data-rating-key="visualVividness"></div>
+            </div>
+            <div class="rating-block">
+              <strong>오늘 머리는 얼마나 맑았나요?</strong>
+              <div class="star-rating" data-rating-key="clarity"></div>
+            </div>
+            <div class="rating-block">
+              <strong>오늘 집중감은 어땠나요?</strong>
+              <div class="star-rating" data-rating-key="focus"></div>
+            </div>
+            <label class="full evening-note">오늘의 한 줄 회고<textarea id="flowEveningNote" rows="3" placeholder="예: 아침엔 산만했지만 저녁에는 머리가 조금 조용해졌다."></textarea></label>
+          </div>
+          <div class="form-actions">
+            <button id="flowSaveEvening" class="primary">저녁 체크 저장</button>
+            <button id="flowGoDaily" class="secondary">상세 체크로 이동</button>
+          </div>
+        </section>
+      </section>
+
+      <section id="dashboard" class="view">
         <div class="hero">
           <div>
             <p class="eyebrow">56일 재훈련 프로젝트</p>

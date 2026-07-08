@@ -1,6 +1,6 @@
 {
-  "name": "8주 Long Thought 회복 앱 v2",
-  "short_name": "Deep Thinking",
+  "name": "Long Thought Recovery v0.3.0",
+  "short_name": "Long Thought",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f6f7fb",

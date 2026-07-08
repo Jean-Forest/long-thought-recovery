@@ -1,5 +1,6 @@
-const STORAGE_KEY = "deep-thinking-8week-v2";
-const LEGACY_STORAGE_KEY = "deep-thinking-8week-v1";
+const STORAGE_KEY = "deep-thinking-8week-v3";
+const LEGACY_STORAGE_KEY = "deep-thinking-8week-v2";
+const OLDEST_STORAGE_KEY = "deep-thinking-8week-v1";
 
 const plans = [
   {
@@ -124,9 +125,23 @@ let timer = {
   running: false
 };
 
+let flowTimer = {
+  durationSeconds: 20 * 60,
+  remainingSeconds: 20 * 60,
+  intervalId: null,
+  running: false,
+  completed: false
+};
+
+let flowRatings = {
+  clarity: 3,
+  focus: 3,
+  visualVividness: 3
+};
+
 function defaultState() {
   return {
-    version: 2,
+    version: 3,
     startDate: toISODate(new Date()),
     entries: {}
   };
@@ -134,9 +149,11 @@ function defaultState() {
 
 function loadState() {
   try {
-    const rawV2 = localStorage.getItem(STORAGE_KEY);
+    const rawV3 = localStorage.getItem(STORAGE_KEY);
+    if (rawV3) return normalizeState(JSON.parse(rawV3));
+    const rawV2 = localStorage.getItem(LEGACY_STORAGE_KEY);
     if (rawV2) return normalizeState(JSON.parse(rawV2));
-    const rawV1 = localStorage.getItem(LEGACY_STORAGE_KEY);
+    const rawV1 = localStorage.getItem(OLDEST_STORAGE_KEY);
     if (rawV1) return normalizeState(JSON.parse(rawV1));
     return defaultState();
   } catch (e) {
@@ -147,7 +164,7 @@ function loadState() {
 function normalizeState(input) {
   const base = defaultState();
   const next = { ...base, ...(input || {}) };
-  next.version = 2;
+  next.version = 3;
   next.entries = next.entries || {};
   Object.keys(next.entries).forEach(date => {
     next.entries[date] = { ...emptyEntry(), ...next.entries[date] };
@@ -241,12 +258,246 @@ function switchView(id) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active-view"));
   document.getElementById(id).classList.add("active-view");
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === id));
+  if (id === "flow") renderFlow();
   if (id === "dashboard") renderDashboard();
   if (id === "train") renderTrain();
   if (id === "daily") renderDaily();
   if (id === "analytics") renderAnalytics();
   if (id === "journal") renderJournal();
   if (id === "weekly") renderWeekly();
+}
+
+
+function weekdayKo(date) {
+  return ["일", "월", "화", "수", "목", "금", "토"][new Date(date + "T00:00:00").getDay()];
+}
+
+function currentFlowDate() {
+  return toISODate(new Date());
+}
+
+function resetFlowTimerForToday() {
+  const today = currentFlowDate();
+  const plan = getPlanForDate(today);
+  flowTimer.durationSeconds = plan.longThought * 60;
+  if (!flowTimer.running) flowTimer.remainingSeconds = flowTimer.durationSeconds;
+  flowTimer.completed = false;
+  updateFlowTimerDisplay();
+}
+
+function renderFlow() {
+  const today = currentFlowDate();
+  const day = Math.min(56, Math.max(1, dayIndex(today)));
+  const plan = getPlanForDate(today);
+  const entry = getEntry(today);
+  const prompts = getPrompts(today);
+  flowRatings = {
+    clarity: Number(entry.clarity || 3),
+    focus: Number(entry.focus || 3),
+    visualVividness: Number(entry.visualVividness || 3)
+  };
+
+  document.getElementById("flowTodayTitle").textContent = `오늘은 ${plan.week}주차 ${weekdayKo(today)}요일입니다.`;
+  document.getElementById("flowTodaySub").textContent = `Day ${day} · ${plan.theme} · ${today}`;
+  document.getElementById("flowTargetMinutes").textContent = `${plan.longThought}분`;
+  document.getElementById("flowTargetLabel").textContent = "Long Thought";
+  document.getElementById("flowWeekBadge").textContent = `Week ${plan.week}`;
+  document.getElementById("flowLongQuestion").textContent = prompts.long;
+  document.getElementById("flowEveningNote").value = "";
+
+  if (!flowTimer.running) {
+    flowTimer.durationSeconds = plan.longThought * 60;
+    if (!flowTimer.completed) flowTimer.remainingSeconds = flowTimer.durationSeconds;
+  }
+  updateFlowTimerDisplay();
+  renderStarRatings();
+  renderSevenDayFeedback();
+}
+
+function updateFlowTimerDisplay() {
+  const display = document.getElementById("flowTimerDisplay");
+  if (!display) return;
+  const min = Math.floor(flowTimer.remainingSeconds / 60);
+  const sec = flowTimer.remainingSeconds % 60;
+  display.textContent = `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
+
+function startFlowTimer() {
+  if (flowTimer.running) return;
+  if (flowTimer.completed || flowTimer.remainingSeconds <= 0) resetFlowTimerForToday();
+  flowTimer.running = true;
+  flowTimer.intervalId = setInterval(() => {
+    flowTimer.remainingSeconds = Math.max(0, flowTimer.remainingSeconds - 1);
+    updateFlowTimerDisplay();
+    if (flowTimer.remainingSeconds === 0) completeFlowSession(true);
+  }, 1000);
+}
+
+function pauseFlowTimer() {
+  if (flowTimer.intervalId) clearInterval(flowTimer.intervalId);
+  flowTimer.intervalId = null;
+  flowTimer.running = false;
+}
+
+function resetFlowTimer() {
+  pauseFlowTimer();
+  const plan = getPlanForDate(currentFlowDate());
+  flowTimer.durationSeconds = plan.longThought * 60;
+  flowTimer.remainingSeconds = flowTimer.durationSeconds;
+  flowTimer.completed = false;
+  document.getElementById("flowPostSession").classList.add("hidden");
+  updateFlowTimerDisplay();
+}
+
+function completeFlowSession(fromTimerEnd = false) {
+  if (flowTimer.completed) {
+    document.getElementById("flowPostSession").classList.remove("hidden");
+    return;
+  }
+  pauseFlowTimer();
+  const today = currentFlowDate();
+  const plan = getPlanForDate(today);
+  const elapsed = Math.max(0, flowTimer.durationSeconds - flowTimer.remainingSeconds);
+  const minutes = fromTimerEnd ? plan.longThought : Math.max(1, Math.round(elapsed / 60 || plan.longThought));
+  const entry = getEntry(today);
+  entry.longThoughtMin = Math.max(Number(entry.longThoughtMin || 0), minutes);
+  entry.note = appendNote(entry.note, `[Morning Flow] Long Thought ${minutes}분 완료\n질문: ${getPrompts(today).long}`);
+  state.entries[today] = entry;
+  saveState();
+  flowTimer.remainingSeconds = 0;
+  flowTimer.completed = true;
+  updateFlowTimerDisplay();
+  document.getElementById("flowPostSession").classList.remove("hidden");
+  renderSevenDayFeedback();
+  showToast("Long Thought 완료 기록을 저장했습니다.");
+}
+
+function saveFlowSessionNote() {
+  const note = document.getElementById("flowSessionNote").value.trim();
+  if (!note) {
+    showToast("저장할 저널 내용을 입력하세요.");
+    return;
+  }
+  const today = currentFlowDate();
+  const entry = getEntry(today);
+  entry.note = appendNote(entry.note, `[훈련 후 저널]\n${note}`);
+  state.entries[today] = entry;
+  saveState();
+  document.getElementById("flowSessionNote").value = "";
+  renderSevenDayFeedback();
+  showToast("훈련 후 저널을 저장했습니다.");
+}
+
+function renderStarRatings() {
+  document.querySelectorAll(".star-rating").forEach(group => {
+    const key = group.dataset.ratingKey;
+    const value = Number(flowRatings[key] || 3);
+    group.innerHTML = "";
+    for (let i = 1; i <= 5; i++) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "star-btn" + (i <= value ? " active" : "");
+      btn.textContent = "★";
+      btn.setAttribute("aria-label", `${i}점`);
+      btn.dataset.ratingValue = String(i);
+      group.appendChild(btn);
+    }
+  });
+}
+
+function saveEveningReflection() {
+  const today = currentFlowDate();
+  const entry = getEntry(today);
+  entry.visualVividness = Number(flowRatings.visualVividness || 3);
+  entry.clarity = Number(flowRatings.clarity || 3);
+  entry.focus = Number(flowRatings.focus || 3);
+  const note = document.getElementById("flowEveningNote").value.trim();
+  if (note) entry.note = appendNote(entry.note, `[저녁 회고]\n${note}`);
+  state.entries[today] = entry;
+  saveState();
+  document.getElementById("flowEveningNote").value = "";
+  renderSevenDayFeedback();
+  showToast("저녁 체크를 저장했습니다.");
+}
+
+function averageMetric(rows, key) {
+  const valid = rows.filter(r => r.tracked && r[key] !== null && r[key] !== undefined);
+  const sum = valid.reduce((acc, r) => acc + Number(r[key] || 0), 0);
+  return valid.length ? sum / valid.length : 0;
+}
+
+function windowSeries(endDate, days) {
+  const rows = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const date = addDays(endDate, -i);
+    const entry = getEntry(date);
+    const plan = getPlanForDate(date);
+    const tracked = isTracked(date);
+    rows.push({
+      date,
+      tracked,
+      score: tracked ? scoreEntry(entry, plan) : null,
+      shorts: tracked ? Number(entry.shortsMinutes || 0) : null,
+      sleep: tracked ? Number(entry.sleepHours || 0) : null,
+      longThoughtMin: tracked ? Number(entry.longThoughtMin || 0) : null,
+      visualVividness: tracked ? Number(entry.visualVividness || 0) : null,
+      focus: tracked ? Number(entry.focus || 0) : null
+    });
+  }
+  return rows;
+}
+
+function pctChange(current, previous, lowerIsBetter = false) {
+  if (!previous) return null;
+  const raw = ((current - previous) / previous) * 100;
+  return lowerIsBetter ? -raw : raw;
+}
+
+function signed(value, suffix = "") {
+  if (value === null || Number.isNaN(value)) return "기준 없음";
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${value.toFixed(1)}${suffix}`;
+}
+
+function renderSevenDayFeedback() {
+  const today = currentFlowDate();
+  const recent = windowSeries(today, 7);
+  const previous = windowSeries(addDays(today, -7), 7);
+  const tracked = recent.filter(r => r.tracked).length;
+  const prevTracked = previous.filter(r => r.tracked).length;
+  const avgScore = averageMetric(recent, "score");
+  const avgLong = averageMetric(recent, "longThoughtMin");
+  const avgShorts = averageMetric(recent, "shorts");
+  const avgSleep = averageMetric(recent, "sleep");
+  const avgVisual = averageMetric(recent, "visualVividness");
+  const avgFocus = averageMetric(recent, "focus");
+  const prevLong = averageMetric(previous, "longThoughtMin");
+  const prevShorts = averageMetric(previous, "shorts");
+  const prevVisual = averageMetric(previous, "visualVividness");
+  const prevFocus = averageMetric(previous, "focus");
+  const el = document.getElementById("flowFeedback");
+  if (!el) return;
+  let recommendationText = "먼저 3일만 기록을 쌓아보세요. 기록이 쌓이면 앱이 더 정확히 추천합니다.";
+  if (tracked >= 3) {
+    if (avgScore >= 6 && avgLong >= getPlanForDate(today).longThought * 0.8) recommendationText = "Long Thought 흐름이 안정적입니다. 다음 주는 계산 난이도를 한 단계 올려도 됩니다.";
+    else if (avgSleep && avgSleep < 6) recommendationText = "최근 수면이 부족합니다. 루틴을 올리기보다 수면 7시간 회복을 먼저 유지하세요.";
+    else if (avgScore < 4) recommendationText = "최근 점수가 낮습니다. 오늘은 최소 루틴으로 줄이고 끊기지 않는 것을 목표로 하세요.";
+    else recommendationText = "현재 강도를 유지하세요. 실패 항목은 하나만 골라 시작 난이도를 낮추는 것이 좋습니다.";
+  }
+
+  const shortsChange = pctChange(avgShorts, prevShorts, true);
+  const longDelta = prevTracked ? avgLong - prevLong : null;
+  const visualDelta = prevTracked ? avgVisual - prevVisual : null;
+  const focusDelta = prevTracked ? avgFocus - prevFocus : null;
+
+  el.innerHTML = `
+    <div class="feedback-item"><span>최근 7일 기록</span><strong>${tracked}/7일</strong><p>평균 점수 ${tracked ? avgScore.toFixed(1) : "-"}/8</p></div>
+    <div class="feedback-item"><span>쇼츠 사용</span><strong>${tracked ? Math.round(avgShorts) + "분" : "-"}</strong><p>${shortsChange === null ? "지난주 기준이 아직 없습니다." : `지난주보다 ${Math.abs(shortsChange).toFixed(0)}% ${shortsChange >= 0 ? "개선" : "증가"}`}</p></div>
+    <div class="feedback-item"><span>Long Thought</span><strong>${tracked ? Math.round(avgLong) + "분" : "-"}</strong><p>${longDelta === null ? "지난주 기준이 아직 없습니다." : `지난주 대비 ${signed(longDelta, "분")}`}</p></div>
+    <div class="feedback-item"><span>수면</span><strong>${tracked ? avgSleep.toFixed(1) + "h" : "-"}</strong><p>권장 목표는 7시간 이상입니다.</p></div>
+    <div class="feedback-item"><span>시각화 · 집중</span><strong>${tracked ? `${avgVisual.toFixed(1)} / ${avgFocus.toFixed(1)}` : "-"}</strong><p>시각화 ${signed(visualDelta)}, 집중 ${signed(focusDelta)}</p></div>
+    <div class="feedback-item"><span>추천</span><strong>다음 조정</strong><p>${recommendationText}</p></div>
+  `;
 }
 
 function renderDashboard() {
@@ -959,6 +1210,19 @@ function quickSaveFromTrain() {
 
 function initEvents() {
   document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => switchView(btn.dataset.view)));
+  document.getElementById("flowTimerStart").addEventListener("click", startFlowTimer);
+  document.getElementById("flowTimerPause").addEventListener("click", pauseFlowTimer);
+  document.getElementById("flowTimerReset").addEventListener("click", resetFlowTimer);
+  document.getElementById("flowTimerComplete").addEventListener("click", () => completeFlowSession(false));
+  document.getElementById("flowSaveSessionNote").addEventListener("click", saveFlowSessionNote);
+  document.getElementById("flowSaveEvening").addEventListener("click", saveEveningReflection);
+  document.getElementById("flowGoDaily").addEventListener("click", () => { currentDate = toISODate(new Date()); switchView("daily"); });
+  document.querySelectorAll(".star-rating").forEach(group => group.addEventListener("click", e => {
+    const btn = e.target.closest(".star-btn");
+    if (!btn) return;
+    flowRatings[group.dataset.ratingKey] = Number(btn.dataset.ratingValue);
+    renderStarRatings();
+  }));
   document.getElementById("goToday").addEventListener("click", () => { currentDate = toISODate(new Date()); switchView("daily"); });
   document.getElementById("goTrain").addEventListener("click", () => { trainDate = toISODate(new Date()); switchView("train"); });
 
@@ -1018,8 +1282,8 @@ function initEvents() {
     renderDashboard();
     showToast("시작일을 저장했습니다.");
   });
-  document.getElementById("exportJson").addEventListener("click", () => exportFile("deep-thinking-8week-v2-backup.json", JSON.stringify(state, null, 2), "application/json"));
-  document.getElementById("exportCsv").addEventListener("click", () => exportFile("deep-thinking-8week-v2-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
+  document.getElementById("exportJson").addEventListener("click", () => exportFile("long-thought-recovery-v030-backup.json", JSON.stringify(state, null, 2), "application/json"));
+  document.getElementById("exportCsv").addEventListener("click", () => exportFile("long-thought-recovery-v030-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
   document.getElementById("importJson").addEventListener("change", async e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1040,6 +1304,7 @@ function initEvents() {
   window.addEventListener("resize", () => {
     const active = document.querySelector(".active-view");
     if (!active) return;
+    if (active.id === "flow") renderSevenDayFeedback();
     if (active.id === "dashboard") renderRecentMiniChart();
     if (active.id === "analytics") renderAnalytics();
   });
@@ -1065,6 +1330,7 @@ if ("serviceWorker" in navigator) {
 }
 
 renderPlan();
+renderFlow();
 renderDashboard();
 renderWeekly();
 renderTrain();

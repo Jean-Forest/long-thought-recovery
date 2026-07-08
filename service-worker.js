@@ -1,4 +1,4 @@
-const CACHE_NAME = "deep-thinking-8week-v2-cache-v1";
+const CACHE_NAME = "long-thought-recovery-v030-cache-v1";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", event => {
