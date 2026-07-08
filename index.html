@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Long Thought Recovery v0.3.0</title>
+  <title>Long Thought Recovery v0.4.0</title>
   <meta name="theme-color" content="#111827">
   <meta name="description" content="Long Thought, 계산, 시각화, 독서, 수면, 운동을 8주간 기록하고 훈련하는 개인 회복 루틴 앱">
   <link rel="manifest" href="manifest.json">
@@ -16,7 +16,7 @@
         <div class="brand-mark">8W</div>
         <div>
           <h1>Deep Thinking</h1>
-          <p>8주 회복 루틴 v0.3.0</p>
+          <p>8주 회복 루틴 v0.4.0</p>
         </div>
       </div>
       <nav class="nav">
@@ -38,7 +38,7 @@
       <section id="flow" class="view active-view">
         <div class="flow-hero">
           <div>
-            <p class="eyebrow">Daily Flow v0.3.0</p>
+            <p class="eyebrow">Daily Flow v0.4.0</p>
             <h2 id="flowTodayTitle">오늘은 1주차 월요일입니다.</h2>
             <p class="hero-copy" id="flowTodaySub">오늘의 Long Thought를 시작하고, 저녁에는 회복 지표를 기록하세요.</p>
           </div>
@@ -48,6 +48,20 @@
             <small id="flowTargetLabel">Long Thought</small>
           </div>
         </div>
+
+        <section class="panel adaptive-panel">
+          <div class="panel-head">
+            <h3>오늘의 적응 추천</h3>
+            <span id="adaptiveModePill" class="pill">Standard Mode</span>
+          </div>
+          <div id="adaptiveSummary" class="adaptive-summary"></div>
+          <div class="routine-mode-tabs" id="routineModeTabs">
+            <button type="button" data-routine-mode="recovery">Recovery</button>
+            <button type="button" data-routine-mode="standard">Standard</button>
+            <button type="button" data-routine-mode="growth">Growth</button>
+          </div>
+          <div id="routinePlan" class="routine-plan"></div>
+        </section>
 
         <div class="flow-grid">
           <section class="panel flow-main-card">
@@ -81,6 +95,14 @@
             <div id="flowFeedback" class="feedback-list"></div>
           </aside>
         </div>
+
+        <section class="panel weekly-comparison-panel">
+          <div class="panel-head">
+            <h3>지난주 대비 변화</h3>
+            <span class="muted">최근 7일 vs 이전 7일</span>
+          </div>
+          <div id="flowWeeklyComparison" class="comparison-grid"></div>
+        </section>
 
         <section class="panel evening-panel">
           <div class="panel-head">

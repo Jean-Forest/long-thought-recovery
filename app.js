@@ -1,5 +1,6 @@
-const STORAGE_KEY = "deep-thinking-8week-v3";
-const LEGACY_STORAGE_KEY = "deep-thinking-8week-v2";
+const STORAGE_KEY = "deep-thinking-8week-v4";
+const LEGACY_STORAGE_KEY = "deep-thinking-8week-v3";
+const OLDER_STORAGE_KEY = "deep-thinking-8week-v2";
 const OLDEST_STORAGE_KEY = "deep-thinking-8week-v1";
 
 const plans = [
@@ -139,9 +140,21 @@ let flowRatings = {
   visualVividness: 3
 };
 
+const routineModeLabels = {
+  recovery: "Recovery Mode",
+  standard: "Standard Mode",
+  growth: "Growth Mode"
+};
+
+const routineModeDescriptions = {
+  recovery: "컨디션이 낮은 날에는 끊기지 않는 최소 루틴을 우선합니다.",
+  standard: "현재 주차의 기본 루틴을 유지합니다.",
+  growth: "최근 흐름이 안정적일 때 아주 조금만 난이도를 올립니다."
+};
+
 function defaultState() {
   return {
-    version: 3,
+    version: 4,
     startDate: toISODate(new Date()),
     entries: {}
   };
@@ -149,9 +162,11 @@ function defaultState() {
 
 function loadState() {
   try {
-    const rawV3 = localStorage.getItem(STORAGE_KEY);
+    const rawV4 = localStorage.getItem(STORAGE_KEY);
+    if (rawV4) return normalizeState(JSON.parse(rawV4));
+    const rawV3 = localStorage.getItem(LEGACY_STORAGE_KEY);
     if (rawV3) return normalizeState(JSON.parse(rawV3));
-    const rawV2 = localStorage.getItem(LEGACY_STORAGE_KEY);
+    const rawV2 = localStorage.getItem(OLDER_STORAGE_KEY);
     if (rawV2) return normalizeState(JSON.parse(rawV2));
     const rawV1 = localStorage.getItem(OLDEST_STORAGE_KEY);
     if (rawV1) return normalizeState(JSON.parse(rawV1));
@@ -164,7 +179,7 @@ function loadState() {
 function normalizeState(input) {
   const base = defaultState();
   const next = { ...base, ...(input || {}) };
-  next.version = 3;
+  next.version = 4;
   next.entries = next.entries || {};
   Object.keys(next.entries).forEach(date => {
     next.entries[date] = { ...emptyEntry(), ...next.entries[date] };
@@ -221,7 +236,8 @@ function emptyEntry() {
     focus: 3,
     visualVividness: 3,
     blocker: "",
-    note: ""
+    note: "",
+    routineMode: ""
   };
 }
 
@@ -276,10 +292,180 @@ function currentFlowDate() {
   return toISODate(new Date());
 }
 
+function clampNumber(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function trackedCount(rows) {
+  return rows.filter(r => r.tracked).length;
+}
+
+function getRoutinePlanForMode(plan, mode = "standard") {
+  const normalized = routineModeLabels[mode] ? mode : "standard";
+  if (normalized === "recovery") {
+    return {
+      mode: "recovery",
+      longThought: clampNumber(plan.longThought - 15, 10, plan.longThought),
+      calc: "3문제 또는 5분",
+      visual: clampNumber(plan.visual - 4, 3, plan.visual),
+      reading: 1,
+      exercise: 10,
+      note: "최소 복귀가 목표입니다. 오늘은 기록이 끊기지 않는 것만 성공으로 봅니다."
+    };
+  }
+  if (normalized === "growth") {
+    return {
+      mode: "growth",
+      longThought: clampNumber(plan.longThought + 5, plan.longThought, 60),
+      calc: "10분 + 난이도 1단계 검토",
+      visual: clampNumber(plan.visual + 2, plan.visual, 15),
+      reading: plan.reading + 1,
+      exercise: 30,
+      note: "잘 되는 항목만 아주 조금 늘립니다. 수면이 흔들리면 즉시 Standard로 돌아옵니다."
+    };
+  }
+  return {
+    mode: "standard",
+    longThought: plan.longThought,
+    calc: "10분",
+    visual: plan.visual,
+    reading: plan.reading,
+    exercise: 30,
+    note: "현재 주차의 기본 루틴입니다. 안정적인 반복을 우선합니다."
+  };
+}
+
+function getAdaptiveAnalysis(date = currentFlowDate()) {
+  const plan = getPlanForDate(date);
+  const recent3 = windowSeries(date, 3);
+  const recent7 = windowSeries(date, 7);
+  const previous7 = windowSeries(addDays(date, -7), 7);
+  const tracked3 = trackedCount(recent3);
+  const tracked7 = trackedCount(recent7);
+  const prevTracked = trackedCount(previous7);
+  const avgScore3 = averageMetric(recent3, "score");
+  const avgScore7 = averageMetric(recent7, "score");
+  const avgLong7 = averageMetric(recent7, "longThoughtMin");
+  const avgSleep7 = averageMetric(recent7, "sleep");
+  const avgShorts7 = averageMetric(recent7, "shorts");
+  const avgVisual7 = averageMetric(recent7, "visualVividness");
+  const avgFocus7 = averageMetric(recent7, "focus");
+  const prevShorts = averageMetric(previous7, "shorts");
+  const prevLong = averageMetric(previous7, "longThoughtMin");
+  const prevSleep = averageMetric(previous7, "sleep");
+  const prevFocus = averageMetric(previous7, "focus");
+  const prevVisual = averageMetric(previous7, "visualVividness");
+
+  let recommendedMode = "standard";
+  const reasons = [];
+  if (tracked3 < 2 && tracked7 < 3) {
+    reasons.push("기록이 아직 적습니다. 우선 Standard로 시작하고 3일 이상 기록을 쌓으세요.");
+  } else if ((tracked3 >= 2 && avgScore3 < 4) || (tracked7 >= 4 && avgSleep7 > 0 && avgSleep7 < 6)) {
+    recommendedMode = "recovery";
+    if (tracked3 >= 2 && avgScore3 < 4) reasons.push("최근 3일 평균 점수가 4점 미만입니다.");
+    if (tracked7 >= 4 && avgSleep7 > 0 && avgSleep7 < 6) reasons.push("최근 7일 평균 수면이 6시간 미만입니다.");
+  } else if (tracked7 >= 5 && avgScore7 >= 6 && avgLong7 >= plan.longThought * 0.8 && avgSleep7 >= 6.5) {
+    recommendedMode = "growth";
+    reasons.push("최근 7일 평균 점수와 Long Thought 수행률이 안정적입니다.");
+  } else {
+    reasons.push("현재는 루틴을 크게 올리기보다 기본 강도를 유지하는 것이 좋습니다.");
+  }
+
+  const shortsChange = prevTracked ? pctChange(avgShorts7, prevShorts, true) : null;
+  const longDelta = prevTracked ? avgLong7 - prevLong : null;
+  const sleepDelta = prevTracked ? avgSleep7 - prevSleep : null;
+  const focusDelta = prevTracked ? avgFocus7 - prevFocus : null;
+  const visualDelta = prevTracked ? avgVisual7 - prevVisual : null;
+
+  return {
+    plan, recommendedMode, reasons, tracked3, tracked7, prevTracked,
+    avgScore3, avgScore7, avgLong7, avgSleep7, avgShorts7, avgVisual7, avgFocus7,
+    shortsChange, longDelta, sleepDelta, focusDelta, visualDelta
+  };
+}
+
+function getSelectedRoutineMode(date = currentFlowDate(), analysis = getAdaptiveAnalysis(date)) {
+  const entry = getEntry(date);
+  return routineModeLabels[entry.routineMode] ? entry.routineMode : analysis.recommendedMode;
+}
+
+function recommendationSentence(analysis, mode) {
+  if (mode === "recovery") {
+    if (analysis.avgSleep7 > 0 && analysis.avgSleep7 < 6) return "수면이 낮아서 훈련 강도를 올리기 어렵습니다. 오늘은 최소 루틴과 수면 안정화를 우선하세요.";
+    return "최근 흐름이 낮습니다. 오늘은 실패가 아니라 복귀를 목표로 최소 루틴만 진행하세요.";
+  }
+  if (mode === "growth") return "최근 기록이 안정적입니다. Long Thought를 5분만 늘리고, 계산은 무리하게 올리지 말고 정확도를 유지하세요.";
+  return "현재 강도를 유지하세요. 하나의 항목만 작게 개선하면 충분합니다.";
+}
+
+function renderAdaptiveRecommendation(date = currentFlowDate()) {
+  const analysis = getAdaptiveAnalysis(date);
+  const mode = getSelectedRoutineMode(date, analysis);
+  const routine = getRoutinePlanForMode(analysis.plan, mode);
+  const pill = document.getElementById("adaptiveModePill");
+  const summary = document.getElementById("adaptiveSummary");
+  const planEl = document.getElementById("routinePlan");
+  if (!pill || !summary || !planEl) return { analysis, mode, routine };
+  pill.textContent = routineModeLabels[mode];
+  pill.className = `pill mode-pill ${mode}`;
+  summary.innerHTML = `
+    <p><strong>${routineModeLabels[mode]}</strong> · ${routineModeDescriptions[mode]}</p>
+    <p>${recommendationSentence(analysis, mode)}</p>
+    <ul>${analysis.reasons.map(r => `<li>${r}</li>`).join("")}</ul>
+  `;
+  document.querySelectorAll("#routineModeTabs button").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.routineMode === mode);
+  });
+  planEl.innerHTML = `
+    <div><span>Long Thought</span><strong>${routine.longThought}분</strong></div>
+    <div><span>계산</span><strong>${routine.calc}</strong></div>
+    <div><span>시각화</span><strong>${routine.visual}분</strong></div>
+    <div><span>독서</span><strong>${routine.reading}쪽</strong></div>
+    <div><span>운동/걷기</span><strong>${routine.exercise}분</strong></div>
+    <p class="routine-note">${routine.note}</p>
+  `;
+  return { analysis, mode, routine };
+}
+
+function chooseRoutineMode(mode) {
+  if (!routineModeLabels[mode]) return;
+  const today = currentFlowDate();
+  const entry = getEntry(today);
+  entry.routineMode = mode;
+  state.entries[today] = entry;
+  saveState();
+  pauseFlowTimer();
+  flowTimer.completed = false;
+  flowTimer.remainingSeconds = getRoutinePlanForMode(getPlanForDate(today), mode).longThought * 60;
+  flowTimer.durationSeconds = flowTimer.remainingSeconds;
+  document.getElementById("flowPostSession").classList.add("hidden");
+  renderFlow();
+  showToast(`${routineModeLabels[mode]}로 설정했습니다.`);
+}
+
+function renderWeeklyComparison(date = currentFlowDate()) {
+  const analysis = getAdaptiveAnalysis(date);
+  const el = document.getElementById("flowWeeklyComparison");
+  if (!el) return;
+  if (!analysis.prevTracked) {
+    el.innerHTML = `<div class="comparison-item"><span>기준 부족</span><strong>이전 7일 기록 없음</strong><p>최근 7일과 이전 7일을 모두 기록하면 변화량이 표시됩니다.</p></div>`;
+    return;
+  }
+  const shorts = analysis.shortsChange === null ? "기준 없음" : `${Math.abs(analysis.shortsChange).toFixed(0)}% ${analysis.shortsChange >= 0 ? "감소" : "증가"}`;
+  el.innerHTML = `
+    <div class="comparison-item"><span>쇼츠 사용</span><strong>${shorts}</strong><p>줄어들수록 좋은 항목입니다.</p></div>
+    <div class="comparison-item"><span>Long Thought</span><strong>${signed(analysis.longDelta, "분")}</strong><p>최근 7일 평균 변화입니다.</p></div>
+    <div class="comparison-item"><span>수면</span><strong>${signed(analysis.sleepDelta, "h")}</strong><p>7시간 이상을 우선 기준으로 봅니다.</p></div>
+    <div class="comparison-item"><span>집중감</span><strong>${signed(analysis.focusDelta)}</strong><p>1–5점 자기평가 기준입니다.</p></div>
+    <div class="comparison-item"><span>시각화</span><strong>${signed(analysis.visualDelta)}</strong><p>1–5점 자기평가 기준입니다.</p></div>
+  `;
+}
+
 function resetFlowTimerForToday() {
   const today = currentFlowDate();
-  const plan = getPlanForDate(today);
-  flowTimer.durationSeconds = plan.longThought * 60;
+  const mode = getSelectedRoutineMode(today);
+  const routine = getRoutinePlanForMode(getPlanForDate(today), mode);
+  flowTimer.durationSeconds = routine.longThought * 60;
   if (!flowTimer.running) flowTimer.remainingSeconds = flowTimer.durationSeconds;
   flowTimer.completed = false;
   updateFlowTimerDisplay();
@@ -291,6 +477,8 @@ function renderFlow() {
   const plan = getPlanForDate(today);
   const entry = getEntry(today);
   const prompts = getPrompts(today);
+  const adaptive = renderAdaptiveRecommendation(today);
+  const routine = adaptive.routine;
   flowRatings = {
     clarity: Number(entry.clarity || 3),
     focus: Number(entry.focus || 3),
@@ -299,19 +487,20 @@ function renderFlow() {
 
   document.getElementById("flowTodayTitle").textContent = `오늘은 ${plan.week}주차 ${weekdayKo(today)}요일입니다.`;
   document.getElementById("flowTodaySub").textContent = `Day ${day} · ${plan.theme} · ${today}`;
-  document.getElementById("flowTargetMinutes").textContent = `${plan.longThought}분`;
-  document.getElementById("flowTargetLabel").textContent = "Long Thought";
+  document.getElementById("flowTargetMinutes").textContent = `${routine.longThought}분`;
+  document.getElementById("flowTargetLabel").textContent = `${routineModeLabels[adaptive.mode]} · Long Thought`;
   document.getElementById("flowWeekBadge").textContent = `Week ${plan.week}`;
   document.getElementById("flowLongQuestion").textContent = prompts.long;
   document.getElementById("flowEveningNote").value = "";
 
   if (!flowTimer.running) {
-    flowTimer.durationSeconds = plan.longThought * 60;
+    flowTimer.durationSeconds = routine.longThought * 60;
     if (!flowTimer.completed) flowTimer.remainingSeconds = flowTimer.durationSeconds;
   }
   updateFlowTimerDisplay();
   renderStarRatings();
   renderSevenDayFeedback();
+  renderWeeklyComparison(today);
 }
 
 function updateFlowTimerDisplay() {
@@ -341,8 +530,10 @@ function pauseFlowTimer() {
 
 function resetFlowTimer() {
   pauseFlowTimer();
-  const plan = getPlanForDate(currentFlowDate());
-  flowTimer.durationSeconds = plan.longThought * 60;
+  const today = currentFlowDate();
+  const mode = getSelectedRoutineMode(today);
+  const routine = getRoutinePlanForMode(getPlanForDate(today), mode);
+  flowTimer.durationSeconds = routine.longThought * 60;
   flowTimer.remainingSeconds = flowTimer.durationSeconds;
   flowTimer.completed = false;
   document.getElementById("flowPostSession").classList.add("hidden");
@@ -356,12 +547,14 @@ function completeFlowSession(fromTimerEnd = false) {
   }
   pauseFlowTimer();
   const today = currentFlowDate();
-  const plan = getPlanForDate(today);
+  const mode = getSelectedRoutineMode(today);
+  const routine = getRoutinePlanForMode(getPlanForDate(today), mode);
   const elapsed = Math.max(0, flowTimer.durationSeconds - flowTimer.remainingSeconds);
-  const minutes = fromTimerEnd ? plan.longThought : Math.max(1, Math.round(elapsed / 60 || plan.longThought));
+  const minutes = fromTimerEnd ? routine.longThought : Math.max(1, Math.round(elapsed / 60 || routine.longThought));
   const entry = getEntry(today);
   entry.longThoughtMin = Math.max(Number(entry.longThoughtMin || 0), minutes);
-  entry.note = appendNote(entry.note, `[Morning Flow] Long Thought ${minutes}분 완료\n질문: ${getPrompts(today).long}`);
+  entry.routineMode = mode;
+  entry.note = appendNote(entry.note, `[Morning Flow] ${routineModeLabels[mode]} · Long Thought ${minutes}분 완료\n질문: ${getPrompts(today).long}`);
   state.entries[today] = entry;
   saveState();
   flowTimer.remainingSeconds = 0;
@@ -369,6 +562,7 @@ function completeFlowSession(fromTimerEnd = false) {
   updateFlowTimerDisplay();
   document.getElementById("flowPostSession").classList.remove("hidden");
   renderSevenDayFeedback();
+  renderWeeklyComparison(today);
   showToast("Long Thought 완료 기록을 저장했습니다.");
 }
 
@@ -385,6 +579,7 @@ function saveFlowSessionNote() {
   saveState();
   document.getElementById("flowSessionNote").value = "";
   renderSevenDayFeedback();
+  renderWeeklyComparison(today);
   showToast("훈련 후 저널을 저장했습니다.");
 }
 
@@ -417,6 +612,7 @@ function saveEveningReflection() {
   saveState();
   document.getElementById("flowEveningNote").value = "";
   renderSevenDayFeedback();
+  renderWeeklyComparison(today);
   showToast("저녁 체크를 저장했습니다.");
 }
 
@@ -477,13 +673,8 @@ function renderSevenDayFeedback() {
   const prevFocus = averageMetric(previous, "focus");
   const el = document.getElementById("flowFeedback");
   if (!el) return;
-  let recommendationText = "먼저 3일만 기록을 쌓아보세요. 기록이 쌓이면 앱이 더 정확히 추천합니다.";
-  if (tracked >= 3) {
-    if (avgScore >= 6 && avgLong >= getPlanForDate(today).longThought * 0.8) recommendationText = "Long Thought 흐름이 안정적입니다. 다음 주는 계산 난이도를 한 단계 올려도 됩니다.";
-    else if (avgSleep && avgSleep < 6) recommendationText = "최근 수면이 부족합니다. 루틴을 올리기보다 수면 7시간 회복을 먼저 유지하세요.";
-    else if (avgScore < 4) recommendationText = "최근 점수가 낮습니다. 오늘은 최소 루틴으로 줄이고 끊기지 않는 것을 목표로 하세요.";
-    else recommendationText = "현재 강도를 유지하세요. 실패 항목은 하나만 골라 시작 난이도를 낮추는 것이 좋습니다.";
-  }
+  const adaptive = getAdaptiveAnalysis(today);
+  const recommendationText = recommendationSentence(adaptive, getSelectedRoutineMode(today, adaptive));
 
   const shortsChange = pctChange(avgShorts, prevShorts, true);
   const longDelta = prevTracked ? avgLong - prevLong : null;
@@ -1217,6 +1408,11 @@ function initEvents() {
   document.getElementById("flowSaveSessionNote").addEventListener("click", saveFlowSessionNote);
   document.getElementById("flowSaveEvening").addEventListener("click", saveEveningReflection);
   document.getElementById("flowGoDaily").addEventListener("click", () => { currentDate = toISODate(new Date()); switchView("daily"); });
+  document.getElementById("routineModeTabs").addEventListener("click", e => {
+    const btn = e.target.closest("button[data-routine-mode]");
+    if (!btn) return;
+    chooseRoutineMode(btn.dataset.routineMode);
+  });
   document.querySelectorAll(".star-rating").forEach(group => group.addEventListener("click", e => {
     const btn = e.target.closest(".star-btn");
     if (!btn) return;
@@ -1282,8 +1478,8 @@ function initEvents() {
     renderDashboard();
     showToast("시작일을 저장했습니다.");
   });
-  document.getElementById("exportJson").addEventListener("click", () => exportFile("long-thought-recovery-v030-backup.json", JSON.stringify(state, null, 2), "application/json"));
-  document.getElementById("exportCsv").addEventListener("click", () => exportFile("long-thought-recovery-v030-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
+  document.getElementById("exportJson").addEventListener("click", () => exportFile("long-thought-recovery-v040-backup.json", JSON.stringify(state, null, 2), "application/json"));
+  document.getElementById("exportCsv").addEventListener("click", () => exportFile("long-thought-recovery-v040-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
   document.getElementById("importJson").addEventListener("change", async e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1304,7 +1500,7 @@ function initEvents() {
   window.addEventListener("resize", () => {
     const active = document.querySelector(".active-view");
     if (!active) return;
-    if (active.id === "flow") renderSevenDayFeedback();
+    if (active.id === "flow") { renderSevenDayFeedback(); renderWeeklyComparison(); }
     if (active.id === "dashboard") renderRecentMiniChart();
     if (active.id === "analytics") renderAnalytics();
   });

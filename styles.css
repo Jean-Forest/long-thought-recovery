@@ -186,7 +186,7 @@ th { color: #374151; background: #f9fafb; }
 }
 
 
-/* v0.3.0 Daily Flow */
+/* v0.4.0 Daily Flow */
 .flow-hero {
   border-radius: 28px;
   padding: 28px;
@@ -268,4 +268,72 @@ th { color: #374151; background: #f9fafb; }
   .flow-grid, .evening-grid { grid-template-columns: 1fr; }
   .flow-hero { align-items: stretch; flex-direction: column; }
   .flow-hero-card { text-align: left; }
+}
+
+
+/* v0.4.0 Adaptive Routine */
+.adaptive-panel {
+  border: 1px solid #dbeafe;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+.adaptive-summary { line-height: 1.65; color: #374151; }
+.adaptive-summary p { margin: 0 0 10px; }
+.adaptive-summary ul { margin: 8px 0 0; padding-left: 20px; }
+.routine-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+.routine-mode-tabs button {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f9fafb;
+  padding: 13px 10px;
+  font-weight: 900;
+}
+.routine-mode-tabs button.active {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
+.mode-pill.recovery { background: #fef3c7; color: #92400e; }
+.mode-pill.standard { background: var(--primary-soft); color: #3730a3; }
+.mode-pill.growth { background: #dcfce7; color: #166534; }
+.routine-plan {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+.routine-plan div, .comparison-item {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fafafa;
+  padding: 14px;
+}
+.routine-plan span, .comparison-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+.routine-plan strong, .comparison-item strong { font-size: 20px; }
+.routine-note {
+  grid-column: 1 / -1;
+  color: #374151;
+  line-height: 1.6;
+  margin: 6px 0 0;
+}
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.comparison-item p { margin: 6px 0 0; color: #374151; line-height: 1.55; }
+@media (max-width: 1060px) {
+  .routine-plan, .comparison-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .routine-mode-tabs, .routine-plan, .comparison-grid { grid-template-columns: 1fr; }
 }

@@ -2,7 +2,7 @@
 
 짧은 자극에 익숙해진 생활 패턴에서 벗어나, 8주 동안 긴 생각, 짧은 계산, 시각화, 독서, 운동, 수면을 다시 훈련하는 개인 회복 루틴 앱입니다.
 
-> 현재 버전은 v0.3.0 Daily Flow MVP입니다. 서버가 없고, 로그인도 없으며, 기록은 사용자의 브라우저 localStorage에 저장됩니다.
+> 현재 버전은 v0.4.0 Adaptive Routine MVP입니다. 서버가 없고, 로그인도 없으며, 기록은 사용자의 브라우저 localStorage에 저장됩니다.
 
 ## Live App
 
@@ -23,6 +23,9 @@ https://jean-forest.github.io/long-thought-recovery/
 - 회복 저널: 머리 맑음, 집중감, 시각화 선명도, 방해요인, 메모
 - 저녁 회복 체크인과 별점 기록
 - 최근 7일 피드백 카드와 간단 추천
+- 기록 기반 적응 추천 카드
+- Recovery / Standard / Growth 루틴 모드
+- 최근 7일 vs 이전 7일 주간 비교 엔진
 - JSON 백업/복원
 - CSV, Markdown 내보내기
 - PWA 설치 지원
