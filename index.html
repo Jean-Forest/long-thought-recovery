@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Long Thought Recovery v0.4.0</title>
+  <title>Long Thought Recovery v0.5.0</title>
   <meta name="theme-color" content="#111827">
   <meta name="description" content="Long Thought, 계산, 시각화, 독서, 수면, 운동을 8주간 기록하고 훈련하는 개인 회복 루틴 앱">
   <link rel="manifest" href="manifest.json">
@@ -16,7 +16,7 @@
         <div class="brand-mark">8W</div>
         <div>
           <h1>Deep Thinking</h1>
-          <p>8주 회복 루틴 v0.4.0</p>
+          <p>8주 회복 루틴 v0.5.0</p>
         </div>
       </div>
       <nav class="nav">
@@ -38,7 +38,7 @@
       <section id="flow" class="view active-view">
         <div class="flow-hero">
           <div>
-            <p class="eyebrow">Daily Flow v0.4.0</p>
+            <p class="eyebrow">Daily Flow v0.5.0</p>
             <h2 id="flowTodayTitle">오늘은 1주차 월요일입니다.</h2>
             <p class="hero-copy" id="flowTodaySub">오늘의 Long Thought를 시작하고, 저녁에는 회복 지표를 기록하세요.</p>
           </div>
@@ -157,6 +157,7 @@
           <article class="card"><span>평균 수면</span><strong id="avgSleep">0.0h</strong><small>기록일 기준</small></article>
           <article class="card"><span>평균 집중감</span><strong id="avgFocus">-</strong><small>1–5점</small></article>
           <article class="card"><span>평균 맑음</span><strong id="avgClarity">-</strong><small>1–5점</small></article>
+          <article class="card"><span>계산 정확도</span><strong id="avgMathAccuracy">-</strong><small>최근 기록 기준</small></article>
         </div>
 
         <section class="panel">
@@ -227,6 +228,44 @@
               <button id="timerComplete" class="secondary">완료 처리</button>
             </div>
             <p class="muted timer-help">완료 처리하면 해당 훈련 시간이 오늘 기록에 더해집니다. 브라우저를 닫으면 타이머는 멈출 수 있으니 훈련 중에는 화면을 유지하세요.</p>
+          </section>
+
+          <section class="panel math-panel">
+            <div class="panel-head">
+              <div>
+                <h3>계산 훈련 v0.5.0</h3>
+                <p class="muted">문제 생성 → 답 입력 → 채점 → 오늘 기록 저장</p>
+              </div>
+              <span id="mathLevelBadge" class="pill">Level 1</span>
+            </div>
+            <div id="mathFeedback" class="math-feedback"></div>
+            <div class="math-toolbar">
+              <label>문제 수
+                <select id="mathCountSelect">
+                  <option value="5">5문제</option>
+                  <option value="8" selected>8문제</option>
+                  <option value="10">10문제</option>
+                </select>
+              </label>
+              <label>체감 난이도
+                <select id="mathDifficultySelect">
+                  <option value="1">1 · 매우 쉬움</option>
+                  <option value="2">2 · 쉬움</option>
+                  <option value="3" selected>3 · 적당함</option>
+                  <option value="4">4 · 어려움</option>
+                  <option value="5">5 · 매우 어려움</option>
+                </select>
+              </label>
+              <button id="mathGenerate" class="secondary">새 문제</button>
+              <button id="mathStart" class="primary">계산 시작</button>
+              <button id="mathGrade" class="secondary">채점 및 저장</button>
+            </div>
+            <div class="math-status">
+              <span id="mathTimer">00:00</span>
+              <span id="mathSessionMeta">시작 전</span>
+            </div>
+            <div id="mathProblemList" class="math-problem-list"></div>
+            <div id="mathResult" class="math-result hidden"></div>
           </section>
 
           <section class="panel">

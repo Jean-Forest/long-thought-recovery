@@ -1,4 +1,4 @@
-const CACHE_NAME = "long-thought-recovery-v040-cache-v1";
+const CACHE_NAME = "long-thought-recovery-v050-cache-v1";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", event => {

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.0 — Mental Math Training MVP
+
+Added:
+- Mental math problem generator by recovery week and routine mode.
+- Answer checking and session scoring.
+- Accuracy, duration, perceived difficulty, and level saved to daily records.
+- Recent math accuracy feedback and dashboard metric.
+- CSV export fields for latest math session results.
+
 ## 0.4.0
 
 - Added Adaptive Recommendation Card based on the last 3 and 7 days of records

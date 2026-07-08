@@ -337,3 +337,97 @@ th { color: #374151; background: #f9fafb; }
 @media (max-width: 640px) {
   .routine-mode-tabs, .routine-plan, .comparison-grid { grid-template-columns: 1fr; }
 }
+
+
+/* v0.5.0 Mental Math Training */
+.cards-compact { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.math-panel {
+  border: 1px solid #e0e7ff;
+  background: linear-gradient(180deg, #ffffff, #f9fbff);
+}
+.math-feedback {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fafafa;
+  padding: 14px;
+  margin-bottom: 16px;
+  line-height: 1.6;
+  color: #374151;
+}
+.math-feedback strong { color: #111827; }
+.math-toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) repeat(3, auto);
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+.math-toolbar label { font-weight: 800; color: #374151; }
+.math-toolbar select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 12px 13px;
+  background: white;
+  margin-top: 7px;
+}
+.math-status {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 0 16px;
+}
+#mathTimer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: #111827;
+  color: white;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+#mathSessionMeta { color: var(--muted); font-weight: 700; }
+.math-problem-list { display: grid; gap: 10px; }
+.math-problem-row {
+  display: grid;
+  grid-template-columns: 44px minmax(160px, 1fr) minmax(120px, 180px) minmax(120px, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  background: white;
+}
+.math-problem-row .math-no {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-weight: 900;
+}
+.math-expression { font-weight: 900; font-size: 18px; }
+.math-problem-row input { margin-top: 0; }
+.math-check { font-weight: 800; color: var(--muted); }
+.math-check.correct { color: var(--good); }
+.math-check.wrong { color: var(--bad); }
+.math-result {
+  margin-top: 16px;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  border-radius: 18px;
+  padding: 16px;
+  line-height: 1.65;
+}
+.math-result strong { font-size: 22px; }
+@media (max-width: 920px) {
+  .math-toolbar { grid-template-columns: 1fr; }
+  .math-problem-row { grid-template-columns: 38px 1fr; }
+  .math-problem-row input, .math-check { grid-column: 2 / -1; }
+}

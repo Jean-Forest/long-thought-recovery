@@ -1,5 +1,6 @@
-const STORAGE_KEY = "deep-thinking-8week-v4";
-const LEGACY_STORAGE_KEY = "deep-thinking-8week-v3";
+const STORAGE_KEY = "deep-thinking-8week-v5";
+const LEGACY_STORAGE_KEY = "deep-thinking-8week-v4";
+const OLDER_V3_STORAGE_KEY = "deep-thinking-8week-v3";
 const OLDER_STORAGE_KEY = "deep-thinking-8week-v2";
 const OLDEST_STORAGE_KEY = "deep-thinking-8week-v1";
 
@@ -140,6 +141,9 @@ let flowRatings = {
   visualVividness: 3
 };
 
+let mathSession = null;
+let mathTimerInterval = null;
+
 const routineModeLabels = {
   recovery: "Recovery Mode",
   standard: "Standard Mode",
@@ -154,7 +158,7 @@ const routineModeDescriptions = {
 
 function defaultState() {
   return {
-    version: 4,
+    version: 5,
     startDate: toISODate(new Date()),
     entries: {}
   };
@@ -162,9 +166,11 @@ function defaultState() {
 
 function loadState() {
   try {
-    const rawV4 = localStorage.getItem(STORAGE_KEY);
+    const rawV5 = localStorage.getItem(STORAGE_KEY);
+    if (rawV5) return normalizeState(JSON.parse(rawV5));
+    const rawV4 = localStorage.getItem(LEGACY_STORAGE_KEY);
     if (rawV4) return normalizeState(JSON.parse(rawV4));
-    const rawV3 = localStorage.getItem(LEGACY_STORAGE_KEY);
+    const rawV3 = localStorage.getItem(OLDER_V3_STORAGE_KEY);
     if (rawV3) return normalizeState(JSON.parse(rawV3));
     const rawV2 = localStorage.getItem(OLDER_STORAGE_KEY);
     if (rawV2) return normalizeState(JSON.parse(rawV2));
@@ -179,10 +185,12 @@ function loadState() {
 function normalizeState(input) {
   const base = defaultState();
   const next = { ...base, ...(input || {}) };
-  next.version = 4;
+  next.version = 5;
   next.entries = next.entries || {};
   Object.keys(next.entries).forEach(date => {
     next.entries[date] = { ...emptyEntry(), ...next.entries[date] };
+    if (next.entries[date].mathSession && !next.entries[date].mathSessions) next.entries[date].mathSessions = [next.entries[date].mathSession];
+    if (!Array.isArray(next.entries[date].mathSessions)) next.entries[date].mathSessions = [];
   });
   return next;
 }
@@ -237,7 +245,8 @@ function emptyEntry() {
     visualVividness: 3,
     blocker: "",
     note: "",
-    routineMode: ""
+    routineMode: "",
+    mathSessions: []
   };
 }
 
@@ -637,7 +646,8 @@ function windowSeries(endDate, days) {
       sleep: tracked ? Number(entry.sleepHours || 0) : null,
       longThoughtMin: tracked ? Number(entry.longThoughtMin || 0) : null,
       visualVividness: tracked ? Number(entry.visualVividness || 0) : null,
-      focus: tracked ? Number(entry.focus || 0) : null
+      focus: tracked ? Number(entry.focus || 0) : null,
+      mathAccuracy: tracked ? latestMathAccuracy(entry) : null
     });
   }
   return rows;
@@ -667,6 +677,7 @@ function renderSevenDayFeedback() {
   const avgSleep = averageMetric(recent, "sleep");
   const avgVisual = averageMetric(recent, "visualVividness");
   const avgFocus = averageMetric(recent, "focus");
+  const avgMath = averageMetric(recent, "mathAccuracy");
   const prevLong = averageMetric(previous, "longThoughtMin");
   const prevShorts = averageMetric(previous, "shorts");
   const prevVisual = averageMetric(previous, "visualVividness");
@@ -687,6 +698,7 @@ function renderSevenDayFeedback() {
     <div class="feedback-item"><span>Long Thought</span><strong>${tracked ? Math.round(avgLong) + "분" : "-"}</strong><p>${longDelta === null ? "지난주 기준이 아직 없습니다." : `지난주 대비 ${signed(longDelta, "분")}`}</p></div>
     <div class="feedback-item"><span>수면</span><strong>${tracked ? avgSleep.toFixed(1) + "h" : "-"}</strong><p>권장 목표는 7시간 이상입니다.</p></div>
     <div class="feedback-item"><span>시각화 · 집중</span><strong>${tracked ? `${avgVisual.toFixed(1)} / ${avgFocus.toFixed(1)}` : "-"}</strong><p>시각화 ${signed(visualDelta)}, 집중 ${signed(focusDelta)}</p></div>
+    <div class="feedback-item"><span>계산 정확도</span><strong>${avgMath ? avgMath.toFixed(0) + "%" : "-"}</strong><p>${mathDifficultySentence()}</p></div>
     <div class="feedback-item"><span>추천</span><strong>다음 조정</strong><p>${recommendationText}</p></div>
   `;
 }
@@ -702,6 +714,8 @@ function renderDashboard() {
   document.getElementById("avgSleep").textContent = summary.tracked ? summary.avgSleep.toFixed(1) + "h" : "0.0h";
   document.getElementById("avgFocus").textContent = summary.journalCount ? summary.avgFocus.toFixed(1) : "-";
   document.getElementById("avgClarity").textContent = summary.journalCount ? summary.avgClarity.toFixed(1) : "-";
+  const mathEl = document.getElementById("avgMathAccuracy");
+  if (mathEl) mathEl.textContent = summary.mathCount ? summary.avgMathAccuracy.toFixed(0) + "%" : "-";
 
   const d = Math.min(56, Math.max(1, dayIndex(toISODate(new Date()))));
   const plan = plans[weekIndexFromDay(d) - 1];
@@ -722,6 +736,8 @@ function collectSummary() {
   let focusSum = 0;
   let claritySum = 0;
   let journalCount = 0;
+  let mathAccuracySum = 0;
+  let mathCount = 0;
   for (let i = 0; i < 56; i++) {
     const date = addDays(start, i);
     if (!isTracked(date)) continue;
@@ -735,6 +751,8 @@ function collectSummary() {
     if (entry.focus) focusSum += Number(entry.focus);
     if (entry.clarity) claritySum += Number(entry.clarity);
     if (entry.focus || entry.clarity || entry.visualVividness) journalCount += 1;
+    const latestAccuracy = latestMathAccuracy(entry);
+    if (latestAccuracy !== null) { mathAccuracySum += latestAccuracy; mathCount += 1; }
     if (score >= 6) success += 1;
   }
   return {
@@ -747,6 +765,8 @@ function collectSummary() {
     avgSleep: tracked ? sleepSum / tracked : 0,
     avgFocus: journalCount ? focusSum / journalCount : 0,
     avgClarity: journalCount ? claritySum / journalCount : 0,
+    avgMathAccuracy: mathCount ? mathAccuracySum / mathCount : 0,
+    mathCount,
     journalCount
   };
 }
@@ -810,6 +830,7 @@ function renderTrain() {
   trainDate = trainDate || currentDate;
   document.getElementById("trainDayPicker").value = trainDate;
   renderPromptCards("trainPrompts", trainDate, false);
+  renderMathModule();
   setTimerMode(timer.mode, false);
 }
 
@@ -827,28 +848,223 @@ function pickFrom(arr, date, offset = 0) {
   return arr[idx];
 }
 
-function createCalcProblems(date) {
-  const seed = seededNumber(`${date}-${promptVariant}-calc`);
-  const day = dayIndex(date);
-  const week = weekIndexFromDay(day);
+function mathLevelForDate(date, mode = getSelectedRoutineMode(date, getAdaptiveAnalysis(date))) {
+  const week = weekIndexFromDay(dayIndex(date));
+  let level = week <= 2 ? 1 : week <= 3 ? 2 : week <= 4 ? 3 : week <= 6 ? 4 : 5;
+  if (mode === "recovery") level = Math.max(1, level - 1);
+  if (mode === "growth") level = Math.min(6, level + 1);
+  return level;
+}
+
+function makeProblem(expression, answer, kind, level) {
+  return { expression, answer, kind, level };
+}
+
+function generateMathProblems(date, count = 8, mode = getSelectedRoutineMode(date, getAdaptiveAnalysis(date))) {
+  const level = mathLevelForDate(date, mode);
+  const seed = seededNumber(`${date}-${promptVariant}-math-${count}-${level}-${mode}`);
   const problems = [];
-  const count = 5;
   for (let i = 0; i < count; i++) {
-    const a = 20 + ((seed + i * 17) % 70);
-    const b = 11 + ((seed >> (i + 1)) % 79);
-    if (week <= 2) {
-      problems.push(`${a} + ${b} = ?`, `${a + b} - ${a} = ?`);
-      break;
-    } else if (week <= 3) {
-      const m = 3 + ((seed + i * 5) % 7);
-      problems.push(`${a} × ${m} = ?`);
+    const a = 12 + ((seed + i * 37) % 88);
+    const b = 11 + ((seed + i * 19) % 79);
+    const small = 3 + ((seed + i * 11) % 7);
+    if (level <= 1) {
+      if (i % 2 === 0) problems.push(makeProblem(`${a} + ${b}`, a + b, "addition", level));
+      else {
+        const hi = a + b;
+        problems.push(makeProblem(`${hi} - ${a}`, b, "subtraction", level));
+      }
+    } else if (level === 2) {
+      if (i % 3 === 0) problems.push(makeProblem(`${a} + ${b}`, a + b, "addition", level));
+      else problems.push(makeProblem(`${a} × ${small}`, a * small, "multiply_1digit", level));
+    } else if (level === 3) {
+      const c = 12 + ((seed + i * 13) % 18);
+      if (i % 3 === 0) problems.push(makeProblem(`${a} - ${small * 3}`, a - small * 3, "subtraction", level));
+      else problems.push(makeProblem(`${a} × ${c}`, a * c, "multiply_2digit", level));
+    } else if (level === 4) {
+      const divisor = 3 + ((seed + i * 7) % 9);
+      const quotient = 14 + ((seed + i * 5) % 36);
+      if (i % 3 === 0) problems.push(makeProblem(`${divisor * quotient} ÷ ${divisor}`, quotient, "division", level));
+      else problems.push(makeProblem(`${a} × ${small} + ${b}`, a * small + b, "mixed", level));
     } else {
-      const c = 12 + ((seed + i * 9) % 18);
-      problems.push(`${a} × ${c} = ?`);
+      const c = 12 + ((seed + i * 13) % 28);
+      const d = 2 + ((seed + i * 5) % 8);
+      if (i % 3 === 0) problems.push(makeProblem(`(${a} + ${b}) ÷ ${d}`, Math.floor((a + b) / d), "mixed_floor", level));
+      else if (i % 3 === 1) problems.push(makeProblem(`${a} × ${c} - ${b}`, a * c - b, "mixed", level));
+      else problems.push(makeProblem(`${a + b} - ${c} × ${d}`, a + b - c * d, "mixed", level));
     }
   }
-  return problems.slice(0, 5);
+  return problems;
 }
+
+function createCalcProblems(date) {
+  return generateMathProblems(date, 5).map(p => `${p.expression} = ?`);
+}
+
+function latestMathSession(entry) {
+  const sessions = Array.isArray(entry.mathSessions) ? entry.mathSessions : [];
+  return sessions.length ? sessions[sessions.length - 1] : null;
+}
+
+function latestMathAccuracy(entry) {
+  const session = latestMathSession(entry);
+  return session && typeof session.accuracy === "number" ? session.accuracy : null;
+}
+
+function recentMathSessions(limit = 5) {
+  const sessions = [];
+  for (let i = 55; i >= 0; i--) {
+    const date = addDays(state.startDate, i);
+    const entry = getEntry(date);
+    const list = Array.isArray(entry.mathSessions) ? entry.mathSessions : [];
+    list.forEach(session => sessions.push({ ...session, date }));
+  }
+  return sessions.filter(s => s.savedAt || s.date).sort((a, b) => String(b.savedAt || b.date).localeCompare(String(a.savedAt || a.date))).slice(0, limit);
+}
+
+function mathDifficultySentence() {
+  const recent = recentMathSessions(3);
+  if (!recent.length) return "아직 계산 세션 기록이 없습니다. 오늘 첫 세션을 저장해보세요.";
+  const avg = recent.reduce((sum, s) => sum + Number(s.accuracy || 0), 0) / recent.length;
+  const avgDifficulty = recent.reduce((sum, s) => sum + Number(s.difficulty || 3), 0) / recent.length;
+  if (recent.length >= 3 && avg >= 85 && avgDifficulty <= 4) return "최근 정답률이 높습니다. 다음 세션은 난이도를 한 단계 올려도 됩니다.";
+  if (avg < 60) return "최근 정답률이 낮습니다. 오늘은 속도보다 중간값 유지와 정확도를 우선하세요.";
+  if (avgDifficulty >= 4 && avg < 80) return "체감 난이도가 높습니다. 문제 수를 줄이고 풀이 과정을 천천히 유지하세요.";
+  return "현재 난이도를 유지하면서 정답률 80% 이상을 목표로 하세요.";
+}
+
+function formatElapsed(seconds) {
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
+
+function resetMathTimerDisplay() {
+  const el = document.getElementById("mathTimer");
+  if (el) el.textContent = "00:00";
+}
+
+function startMathTimer() {
+  if (!mathSession) createMathSession();
+  mathSession.startedAt = Date.now();
+  mathSession.endedAt = null;
+  if (mathTimerInterval) clearInterval(mathTimerInterval);
+  mathTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - mathSession.startedAt) / 1000);
+    const timerEl = document.getElementById("mathTimer");
+    if (timerEl) timerEl.textContent = formatElapsed(elapsed);
+  }, 1000);
+  document.getElementById("mathSessionMeta").textContent = `${mathSession.problems.length}문제 진행 중`;
+  showToast("계산 세션을 시작했습니다.");
+}
+
+function stopMathTimer() {
+  if (mathTimerInterval) clearInterval(mathTimerInterval);
+  mathTimerInterval = null;
+}
+
+function createMathSession() {
+  const count = Number(document.getElementById("mathCountSelect")?.value || 8);
+  const mode = getSelectedRoutineMode(trainDate, getAdaptiveAnalysis(trainDate));
+  const problems = generateMathProblems(trainDate, count, mode);
+  mathSession = {
+    date: trainDate,
+    mode,
+    level: problems[0]?.level || mathLevelForDate(trainDate, mode),
+    problems,
+    startedAt: null,
+    endedAt: null
+  };
+  renderMathModule();
+}
+
+function renderMathModule() {
+  const date = trainDate || currentDate;
+  const mode = getSelectedRoutineMode(date, getAdaptiveAnalysis(date));
+  const level = mathSession?.date === date ? mathSession.level : mathLevelForDate(date, mode);
+  const badge = document.getElementById("mathLevelBadge");
+  if (badge) badge.textContent = `Level ${level} · ${routineModeLabels[mode] || "Standard Mode"}`;
+  const feedback = document.getElementById("mathFeedback");
+  if (feedback) {
+    const recent = recentMathSessions(3);
+    const recentText = recent.length ? `최근 ${recent.length}회 평균 정확도 ${(recent.reduce((s, x) => s + Number(x.accuracy || 0), 0) / recent.length).toFixed(0)}%` : "최근 계산 기록 없음";
+    feedback.innerHTML = `<strong>${recentText}</strong><br>${mathDifficultySentence()}`;
+  }
+  if (!mathSession || mathSession.date !== date) {
+    mathSession = { date, mode, level, problems: generateMathProblems(date, Number(document.getElementById("mathCountSelect")?.value || 8), mode), startedAt: null, endedAt: null };
+  }
+  const list = document.getElementById("mathProblemList");
+  if (!list) return;
+  list.innerHTML = mathSession.problems.map((p, idx) => `
+    <div class="math-problem-row" data-math-index="${idx}">
+      <span class="math-no">${idx + 1}</span>
+      <span class="math-expression">${p.expression} =</span>
+      <input class="math-answer" inputmode="numeric" autocomplete="off" placeholder="답" data-math-answer="${idx}" aria-label="${idx + 1}번 답">
+      <span class="math-check" id="mathCheck${idx}">대기</span>
+    </div>
+  `).join("");
+  const meta = document.getElementById("mathSessionMeta");
+  if (meta) meta.textContent = `${mathSession.problems.length}문제 · Level ${mathSession.level}`;
+  resetMathTimerDisplay();
+  const result = document.getElementById("mathResult");
+  if (result) { result.classList.add("hidden"); result.innerHTML = ""; }
+}
+
+function gradeAndSaveMathSession() {
+  if (!mathSession) createMathSession();
+  stopMathTimer();
+  const now = Date.now();
+  if (!mathSession.startedAt) mathSession.startedAt = now;
+  mathSession.endedAt = now;
+  const answers = Array.from(document.querySelectorAll(".math-answer"));
+  let correct = 0;
+  const results = mathSession.problems.map((problem, idx) => {
+    const raw = answers[idx]?.value.trim() || "";
+    const userAnswer = Number(raw);
+    const ok = raw !== "" && userAnswer === Number(problem.answer);
+    if (ok) correct += 1;
+    const check = document.getElementById(`mathCheck${idx}`);
+    if (check) {
+      check.textContent = ok ? "정답" : `오답 · 정답 ${problem.answer}`;
+      check.className = `math-check ${ok ? "correct" : "wrong"}`;
+    }
+    return { expression: problem.expression, answer: problem.answer, userAnswer: raw, correct: ok };
+  });
+  const total = mathSession.problems.length;
+  const accuracy = total ? Math.round((correct / total) * 100) : 0;
+  const durationSeconds = Math.max(1, Math.round((mathSession.endedAt - mathSession.startedAt) / 1000));
+  const difficulty = Number(document.getElementById("mathDifficultySelect")?.value || 3);
+  const savedSession = {
+    date: trainDate,
+    mode: mathSession.mode,
+    level: mathSession.level,
+    total,
+    correct,
+    accuracy,
+    durationSeconds,
+    difficulty,
+    results,
+    savedAt: new Date().toISOString()
+  };
+  const entry = getEntry(trainDate);
+  const sessions = Array.isArray(entry.mathSessions) ? entry.mathSessions : [];
+  sessions.push(savedSession);
+  entry.mathSessions = sessions.slice(-10);
+  entry.calcMin = Math.max(Number(entry.calcMin || 0), Math.max(1, Math.round(durationSeconds / 60)));
+  entry.note = appendNote(entry.note, `[계산 훈련] Level ${savedSession.level} · ${correct}/${total} · 정확도 ${accuracy}% · ${formatElapsed(durationSeconds)} · 체감 난이도 ${difficulty}/5`);
+  state.entries[trainDate] = entry;
+  saveState();
+  const result = document.getElementById("mathResult");
+  if (result) {
+    result.classList.remove("hidden");
+    result.innerHTML = `<strong>${correct}/${total} 정답 · 정확도 ${accuracy}%</strong><br>걸린 시간 ${formatElapsed(durationSeconds)} · 체감 난이도 ${difficulty}/5<br>${mathDifficultySentence()}`;
+  }
+  document.getElementById("mathSessionMeta").textContent = `저장됨 · ${accuracy}%`;
+  renderDashboard();
+  renderSevenDayFeedback();
+  showToast("계산 세션을 채점하고 저장했습니다.");
+}
+
 
 function getPrompts(date) {
   return {
@@ -1085,7 +1301,9 @@ function renderWeekly() {
       Object.entries(checks).forEach(([k, v]) => { if (v) itemScores[k] += 1; });
       const score = scoreEntry(e, p);
       scoreSum += score;
-      if (score >= 6) success += 1;
+      const latestAccuracy = latestMathAccuracy(entry);
+    if (latestAccuracy !== null) { mathAccuracySum += latestAccuracy; mathCount += 1; }
+    if (score >= 6) success += 1;
     }
     const entries = Object.entries(itemScores);
     const sortedBest = [...entries].sort((a,b) => b[1] - a[1]);
@@ -1367,7 +1585,7 @@ function toCsv() {
   const header = [
     "date", "day", "week", "score", "shortsOk", "morningQuiet", "shortsMinutes",
     "longThoughtMin", "calcMin", "visualMin", "readingPages", "exerciseMin", "sleepHours",
-    "clarity", "focus", "visualVividness", "blocker", "note"
+    "clarity", "focus", "visualVividness", "mathAccuracy", "mathCorrect", "mathTotal", "mathLevel", "mathDurationSeconds", "blocker", "note"
   ];
   const rows = [header.join(",")];
   for (let i = 0; i < 56; i++) {
@@ -1375,10 +1593,11 @@ function toCsv() {
     const e = getEntry(date);
     const plan = plans[Math.floor(i / 7)];
     const score = isTracked(date) ? scoreEntry(e, plan) : "";
+    const m = latestMathSession(e) || {};
     const row = [
       date, i + 1, plan.week, score, e.shortsOk, e.morningQuiet, e.shortsMinutes,
       e.longThoughtMin, e.calcMin, e.visualMin, e.readingPages, e.exerciseMin, e.sleepHours,
-      e.clarity, e.focus, e.visualVividness, e.blocker, e.note
+      e.clarity, e.focus, e.visualVividness, m.accuracy ?? "", m.correct ?? "", m.total ?? "", m.level ?? "", m.durationSeconds ?? "", e.blocker, e.note
     ].map(v => `"${String(v ?? "").replaceAll('"','""')}"`).join(",");
     rows.push(row);
   }
@@ -1386,7 +1605,8 @@ function toCsv() {
 }
 
 function saveDailyForm() {
-  state.entries[currentDate] = collectForm();
+  const previous = getEntry(currentDate);
+  state.entries[currentDate] = { ...collectForm(), routineMode: previous.routineMode || "", mathSessions: previous.mathSessions || [] };
   saveState();
   renderDailyScore();
   showToast();
@@ -1430,6 +1650,10 @@ function initEvents() {
   document.getElementById("timerPause").addEventListener("click", pauseTimer);
   document.getElementById("timerReset").addEventListener("click", resetTimer);
   document.getElementById("timerComplete").addEventListener("click", completeTimer);
+  document.getElementById("mathGenerate").addEventListener("click", () => { stopMathTimer(); mathSession = null; createMathSession(); showToast("새 계산 문제를 만들었습니다."); });
+  document.getElementById("mathStart").addEventListener("click", startMathTimer);
+  document.getElementById("mathGrade").addEventListener("click", gradeAndSaveMathSession);
+  document.getElementById("mathCountSelect").addEventListener("change", () => { stopMathTimer(); mathSession = null; createMathSession(); });
   document.getElementById("refreshPrompts").addEventListener("click", () => { promptVariant += 1; renderPromptCards("trainPrompts", trainDate, false); showToast("새 프롬프트를 만들었습니다."); });
   document.getElementById("copyPrompts").addEventListener("click", async () => {
     const ok = await copyText(promptText(trainDate));
@@ -1478,8 +1702,8 @@ function initEvents() {
     renderDashboard();
     showToast("시작일을 저장했습니다.");
   });
-  document.getElementById("exportJson").addEventListener("click", () => exportFile("long-thought-recovery-v040-backup.json", JSON.stringify(state, null, 2), "application/json"));
-  document.getElementById("exportCsv").addEventListener("click", () => exportFile("long-thought-recovery-v040-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
+  document.getElementById("exportJson").addEventListener("click", () => exportFile("long-thought-recovery-v050-backup.json", JSON.stringify(state, null, 2), "application/json"));
+  document.getElementById("exportCsv").addEventListener("click", () => exportFile("long-thought-recovery-v050-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
   document.getElementById("importJson").addEventListener("change", async e => {
     const file = e.target.files[0];
     if (!file) return;
