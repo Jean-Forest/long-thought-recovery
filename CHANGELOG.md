@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.7.0 — 8-Week Report MVP
+
+Added:
+- Before / After report summary comparing the first available recorded week with the recent 7 days.
+- Report metrics for Long Thought, short-form content, sleep, focus, visualization vividness, score, and math accuracy.
+- Rule-based recovery narrative with summary, interpretation, and next-step recommendation.
+- Markdown report export.
+- Print-friendly report view for saving as PDF from the browser.
+
+
 ## v0.6.0 — Visualization Training MVP
 
 Added:

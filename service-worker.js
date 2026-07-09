@@ -1,5 +1,5 @@
-const CACHE_NAME = "long-thought-recovery-v060-cache-v1";
-const ASSETS = ["./", "./index.html", "./styles.css?v=0.6.0", "./app.js?v=0.6.0", "./manifest.json?v=0.6.0", "./icon.svg"];
+const CACHE_NAME = "long-thought-recovery-v070-cache-v1";
+const ASSETS = ["./", "./index.html", "./styles.css?v=0.7.0", "./app.js?v=0.7.0", "./manifest.json?v=0.7.0", "./icon.svg"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));

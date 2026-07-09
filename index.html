@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Long Thought Recovery v0.6.0</title>
+  <title>Long Thought Recovery v0.7.0</title>
   <meta name="theme-color" content="#111827">
   <meta name="description" content="Long Thought, 계산, 시각화, 독서, 수면, 운동을 8주간 기록하고 훈련하는 개인 회복 루틴 앱">
-  <link rel="manifest" href="manifest.json?v=0.6.0">
-  <link rel="stylesheet" href="styles.css?v=0.6.0">
+  <link rel="manifest" href="manifest.json?v=0.7.0">
+  <link rel="stylesheet" href="styles.css?v=0.7.0">
 </head>
 <body>
   <div class="app-shell">
@@ -16,7 +16,7 @@
         <div class="brand-mark">8W</div>
         <div>
           <h1>Deep Thinking</h1>
-          <p>8주 회복 루틴 v0.6.0</p>
+          <p>8주 회복 루틴 v0.7.0</p>
         </div>
       </div>
       <nav class="nav">
@@ -25,6 +25,7 @@
         <button class="nav-btn" data-view="train">훈련 실행</button>
         <button class="nav-btn" data-view="daily">오늘 체크</button>
         <button class="nav-btn" data-view="analytics">그래프</button>
+        <button class="nav-btn" data-view="report">8주 리포트</button>
         <button class="nav-btn" data-view="journal">회복 저널</button>
         <button class="nav-btn" data-view="plan">8주 계획</button>
         <button class="nav-btn" data-view="weekly">주간 리뷰</button>
@@ -38,7 +39,7 @@
       <section id="flow" class="view active-view">
         <div class="flow-hero">
           <div>
-            <p class="eyebrow">Daily Flow v0.6.0</p>
+            <p class="eyebrow">Daily Flow v0.7.0</p>
             <h2 id="flowTodayTitle">오늘은 1주차 월요일입니다.</h2>
             <p class="hero-copy" id="flowTodaySub">오늘의 Long Thought를 시작하고, 저녁에는 회복 지표를 기록하세요.</p>
           </div>
@@ -140,6 +141,7 @@
           </div>
           <div class="hero-actions">
             <button id="goTrain" class="primary">오늘 훈련 시작</button>
+            <button id="goReport" class="secondary">8주 리포트</button>
             <button id="goToday" class="secondary">오늘 체크</button>
             <button id="installBtn" class="secondary hidden">앱처럼 설치</button>
           </div>
@@ -431,6 +433,58 @@
         </div>
       </section>
 
+      <section id="report" class="view">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">8-Week Report v0.7.0</p>
+            <h2>Before / After 회복 리포트</h2>
+          </div>
+          <div class="form-actions">
+            <button id="exportReportMarkdown" class="primary">Markdown 내보내기</button>
+            <button id="printReport" class="secondary">인쇄 / PDF 저장</button>
+          </div>
+        </div>
+
+        <section class="panel report-hero-panel print-area">
+          <div class="report-hero-grid">
+            <div>
+              <span class="pill">Recovery Report</span>
+              <h3 id="reportTitle">8주 회복 리포트</h3>
+              <p id="reportWindowLabel" class="muted">기록을 분석하는 중입니다.</p>
+            </div>
+            <div class="report-status-card">
+              <span>기록일</span>
+              <strong id="reportTrackedDays">0일</strong>
+              <small id="reportStatus">기록이 쌓이면 리포트가 풍부해집니다.</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel print-area">
+          <div class="panel-head">
+            <h3>Before / After 핵심 지표</h3>
+            <span class="muted">첫 기록 주간 vs 최근 7일</span>
+          </div>
+          <div id="reportMetricGrid" class="report-metric-grid"></div>
+        </section>
+
+        <section class="panel print-area">
+          <div class="panel-head">
+            <h3>회복 해석</h3>
+            <span class="muted">규칙 기반 요약</span>
+          </div>
+          <div id="reportNarrative" class="report-narrative"></div>
+        </section>
+
+        <section class="panel print-area">
+          <div class="panel-head">
+            <h3>리포트 미리보기</h3>
+            <span class="muted">Markdown / 인쇄용 내용</span>
+          </div>
+          <pre id="reportMarkdownPreview" class="report-markdown-preview"></pre>
+        </section>
+      </section>
+
       <section id="journal" class="view">
         <div class="section-title">
           <div><p class="eyebrow">Recovery Journal</p><h2>회복 저널</h2></div>
@@ -517,6 +571,6 @@
   </div>
 
   <div id="toast" class="toast hidden">저장되었습니다.</div>
-  <script src="app.js?v=0.6.0"></script>
+  <script src="app.js?v=0.7.0"></script>
 </body>
 </html>

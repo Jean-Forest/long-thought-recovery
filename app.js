@@ -1,5 +1,6 @@
-const STORAGE_KEY = "deep-thinking-8week-v6";
-const LEGACY_STORAGE_KEY = "deep-thinking-8week-v5";
+const STORAGE_KEY = "deep-thinking-8week-v7";
+const LEGACY_STORAGE_KEY = "deep-thinking-8week-v6";
+const OLDER_V5_STORAGE_KEY = "deep-thinking-8week-v5";
 const OLDER_V4_STORAGE_KEY = "deep-thinking-8week-v4";
 const OLDER_V3_STORAGE_KEY = "deep-thinking-8week-v3";
 const OLDER_STORAGE_KEY = "deep-thinking-8week-v2";
@@ -222,7 +223,7 @@ const routineModeDescriptions = {
 
 function defaultState() {
   return {
-    version: 6,
+    version: 7,
     startDate: toISODate(new Date()),
     entries: {}
   };
@@ -230,9 +231,11 @@ function defaultState() {
 
 function loadState() {
   try {
-    const rawV6 = localStorage.getItem(STORAGE_KEY);
+    const rawV7 = localStorage.getItem(STORAGE_KEY);
+    if (rawV7) return normalizeState(JSON.parse(rawV7));
+    const rawV6 = localStorage.getItem(LEGACY_STORAGE_KEY);
     if (rawV6) return normalizeState(JSON.parse(rawV6));
-    const rawV5 = localStorage.getItem(LEGACY_STORAGE_KEY);
+    const rawV5 = localStorage.getItem(OLDER_V5_STORAGE_KEY);
     if (rawV5) return normalizeState(JSON.parse(rawV5));
     const rawV4 = localStorage.getItem(OLDER_V4_STORAGE_KEY);
     if (rawV4) return normalizeState(JSON.parse(rawV4));
@@ -251,7 +254,7 @@ function loadState() {
 function normalizeState(input) {
   const base = defaultState();
   const next = { ...base, ...(input || {}) };
-  next.version = 6;
+  next.version = 7;
   next.entries = next.entries || {};
   Object.keys(next.entries).forEach(date => {
     next.entries[date] = { ...emptyEntry(), ...next.entries[date] };
@@ -356,6 +359,7 @@ function switchView(id) {
   if (id === "train") renderTrain();
   if (id === "daily") renderDaily();
   if (id === "analytics") renderAnalytics();
+  if (id === "report") renderReport();
   if (id === "journal") renderJournal();
   if (id === "weekly") renderWeekly();
 }
@@ -769,6 +773,232 @@ function renderSevenDayFeedback() {
     <div class="feedback-item"><span>계산 정확도</span><strong>${avgMath ? avgMath.toFixed(0) + "%" : "-"}</strong><p>${mathDifficultySentence()}</p></div>
     <div class="feedback-item"><span>추천</span><strong>다음 조정</strong><p>${recommendationText}</p></div>
   `;
+}
+
+
+function firstTrackedDate() {
+  for (let i = 0; i < 56; i++) {
+    const date = addDays(state.startDate, i);
+    if (isTracked(date)) return date;
+  }
+  return null;
+}
+
+function latestTrackedDate() {
+  let latest = null;
+  for (let i = 0; i < 56; i++) {
+    const date = addDays(state.startDate, i);
+    if (isTracked(date)) latest = date;
+  }
+  return latest;
+}
+
+function rangeSeries(startDate, days) {
+  const rows = [];
+  for (let i = 0; i < days; i++) {
+    const date = addDays(startDate, i);
+    const entry = getEntry(date);
+    const plan = getPlanForDate(date);
+    const tracked = isTracked(date);
+    rows.push({
+      date,
+      tracked,
+      score: tracked ? scoreEntry(entry, plan) : null,
+      shorts: tracked ? Number(entry.shortsMinutes || 0) : null,
+      sleep: tracked ? Number(entry.sleepHours || 0) : null,
+      longThoughtMin: tracked ? Number(entry.longThoughtMin || 0) : null,
+      visualVividness: tracked ? Number(entry.visualVividness || 0) : null,
+      focus: tracked ? Number(entry.focus || 0) : null,
+      mathAccuracy: tracked ? latestMathAccuracy(entry) : null
+    });
+  }
+  return rows;
+}
+
+function totalTrackedDays() {
+  let count = 0;
+  for (let i = 0; i < 56; i++) {
+    if (isTracked(addDays(state.startDate, i))) count += 1;
+  }
+  return count;
+}
+
+function reportMetricAverage(rows, key) {
+  const valid = rows.filter(r => r.tracked && r[key] !== null && r[key] !== undefined && !Number.isNaN(Number(r[key])));
+  if (!valid.length) return null;
+  return valid.reduce((sum, r) => sum + Number(r[key] || 0), 0) / valid.length;
+}
+
+function getReportData() {
+  const first = firstTrackedDate();
+  const latest = latestTrackedDate() || currentFlowDate();
+  const baselineStart = first || state.startDate;
+  const baselineRows = rangeSeries(baselineStart, 7);
+  const recentRows = windowSeries(latest, 7);
+  const baselineTracked = trackedCount(baselineRows);
+  const recentTracked = trackedCount(recentRows);
+  const trackedDays = totalTrackedDays();
+  const metrics = [
+    { key: "score", label: "평균 점수", unit: "/8", kind: "points", better: "higher", decimals: 1 },
+    { key: "longThoughtMin", label: "Long Thought", unit: "분", kind: "delta", better: "higher", decimals: 0 },
+    { key: "shorts", label: "쇼츠 사용", unit: "분", kind: "percent", better: "lower", decimals: 0 },
+    { key: "sleep", label: "수면", unit: "h", kind: "delta", better: "higher", decimals: 1 },
+    { key: "focus", label: "집중감", unit: "/5", kind: "points", better: "higher", decimals: 1 },
+    { key: "visualVividness", label: "시각화 선명도", unit: "/5", kind: "points", better: "higher", decimals: 1 },
+    { key: "mathAccuracy", label: "계산 정확도", unit: "%", kind: "points", better: "higher", decimals: 0 }
+  ].map(metric => {
+    const baseline = reportMetricAverage(baselineRows, metric.key);
+    const recent = reportMetricAverage(recentRows, metric.key);
+    return { ...metric, baseline, recent };
+  });
+  return { first, latest, baselineStart, baselineRows, recentRows, baselineTracked, recentTracked, trackedDays, metrics };
+}
+
+function fmtReportValue(value, metric) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "-";
+  const n = Number(value);
+  return `${metric.decimals === 0 ? Math.round(n) : n.toFixed(metric.decimals)}${metric.unit}`;
+}
+
+function fmtReportChange(metric) {
+  if (metric.baseline === null || metric.recent === null) return { text: "기준 부족", tone: "neutral", detail: "초기/최근 기록이 모두 필요합니다." };
+  const delta = metric.recent - metric.baseline;
+  let text = "";
+  let improved = metric.better === "lower" ? delta < 0 : delta > 0;
+  if (metric.kind === "percent" && metric.baseline > 0) {
+    const pct = Math.abs(delta) / metric.baseline * 100;
+    text = `${Math.round(pct)}% ${delta < 0 ? "감소" : delta > 0 ? "증가" : "변화 없음"}`;
+  } else {
+    const prefix = delta > 0 ? "+" : "";
+    const value = metric.decimals === 0 ? Math.round(delta) : delta.toFixed(metric.decimals);
+    text = `${prefix}${value}${metric.unit}`;
+  }
+  if (Math.abs(delta) < 0.01) improved = false;
+  return {
+    text,
+    tone: Math.abs(delta) < 0.01 ? "neutral" : improved ? "positive" : "caution",
+    detail: metric.better === "lower" ? "낮을수록 좋은 지표입니다." : "높을수록 좋은 지표입니다."
+  };
+}
+
+function buildRecoveryNarrative(data) {
+  if (!data.trackedDays) {
+    return {
+      summary: "아직 저장된 기록이 없습니다. 오늘 체크와 훈련 세션을 3일 이상 쌓으면 회복 리포트가 생성됩니다.",
+      insight: "처음에는 분석보다 기록 안정화가 우선입니다.",
+      next: "오늘은 Standard Mode로 Long Thought 한 번과 저녁 체크인만 저장해보세요."
+    };
+  }
+  if (data.trackedDays < 4) {
+    return {
+      summary: `현재 ${data.trackedDays}일의 기록이 있습니다. Before / After 비교를 하기에는 아직 표본이 적습니다.`,
+      insight: "최소 7일 기록이 쌓이면 첫 주와 최근 주의 변화가 더 정확하게 보입니다.",
+      next: "이번 주 목표는 기능을 모두 쓰는 것이 아니라 하루 기록을 끊기지 않게 저장하는 것입니다."
+    };
+  }
+  const get = key => data.metrics.find(m => m.key === key) || {};
+  const long = get("longThoughtMin");
+  const shorts = get("shorts");
+  const sleep = get("sleep");
+  const focus = get("focus");
+  const visual = get("visualVividness");
+  const math = get("mathAccuracy");
+  const improvements = [];
+  const cautions = [];
+  if (long.baseline !== null && long.recent !== null && long.recent - long.baseline >= 5) improvements.push("Long Thought 시간이 늘었습니다");
+  if (shorts.baseline !== null && shorts.recent !== null && shorts.baseline > 0 && shorts.recent < shorts.baseline) improvements.push("쇼츠 사용량이 줄었습니다");
+  if (focus.baseline !== null && focus.recent !== null && focus.recent - focus.baseline >= 0.4) improvements.push("집중감이 상승했습니다");
+  if (visual.baseline !== null && visual.recent !== null && visual.recent - visual.baseline >= 0.4) improvements.push("시각화 선명도가 상승했습니다");
+  if (math.baseline !== null && math.recent !== null && math.recent - math.baseline >= 10) improvements.push("계산 정확도가 개선되었습니다");
+  if (sleep.recent !== null && sleep.recent < 6.5) cautions.push("최근 수면 평균이 낮아 회복 속도를 제한할 수 있습니다");
+  if (shorts.baseline !== null && shorts.recent !== null && shorts.recent > shorts.baseline) cautions.push("최근 쇼츠 사용량이 초기보다 늘었습니다");
+  if (long.baseline !== null && long.recent !== null && long.recent < long.baseline) cautions.push("Long Thought 시간이 초기보다 줄었습니다");
+
+  const summary = improvements.length
+    ? `초기 주간과 비교해 ${improvements.slice(0, 3).join(", ")}입니다.`
+    : "아직 뚜렷한 상승 신호는 제한적입니다. 기록을 더 쌓으며 기본 루틴을 유지하는 단계입니다.";
+  const insight = cautions.length
+    ? `${cautions[0]}。 숫자 변화보다 수면, 자극 제한, 훈련 지속성을 먼저 안정화하는 것이 좋습니다.`
+    : "현재 흐름은 비교적 안정적인 회복 패턴에 가깝습니다. 무리하게 난이도를 올리기보다 작게 유지하는 것이 좋습니다.";
+  let next = "다음 주는 Standard Mode를 유지하고, 가장 잘 되는 항목 하나만 5분 늘려보세요.";
+  if (sleep.recent !== null && sleep.recent < 6.5) next = "다음 주는 훈련 강도 상승보다 수면 7시간에 가까워지는 것을 우선하세요.";
+  else if (long.recent !== null && long.baseline !== null && long.recent - long.baseline >= 5 && shorts.recent !== null && shorts.baseline !== null && shorts.recent <= shorts.baseline) next = "Long Thought 흐름이 안정적입니다. 다음 주는 계산 또는 시각화 중 하나만 난이도를 올려도 됩니다.";
+  return { summary, insight, next };
+}
+
+function renderReport() {
+  const data = getReportData();
+  const trackedEl = document.getElementById("reportTrackedDays");
+  const statusEl = document.getElementById("reportStatus");
+  const windowEl = document.getElementById("reportWindowLabel");
+  const grid = document.getElementById("reportMetricGrid");
+  const narrativeEl = document.getElementById("reportNarrative");
+  const preview = document.getElementById("reportMarkdownPreview");
+  if (!grid || !narrativeEl || !preview) return;
+  if (trackedEl) trackedEl.textContent = `${data.trackedDays}일`;
+  if (statusEl) statusEl.textContent = data.trackedDays >= 7 ? "Before / After 비교 가능" : "7일 이상 기록하면 비교가 더 안정적입니다.";
+  if (windowEl) {
+    windowEl.textContent = data.first
+      ? `초기 기준: ${data.baselineStart}부터 7일 · 최근 기준: ${addDays(data.latest, -6)}부터 ${data.latest}까지`
+      : `시작일: ${state.startDate} · 아직 기록 없음`;
+  }
+  grid.innerHTML = data.metrics.map(metric => {
+    const change = fmtReportChange(metric);
+    return `<article class="report-metric-card ${change.tone}">
+      <span>${metric.label}</span>
+      <strong>${fmtReportValue(metric.baseline, metric)} → ${fmtReportValue(metric.recent, metric)}</strong>
+      <p>${change.text}</p>
+      <small>${change.detail}</small>
+    </article>`;
+  }).join("");
+  const narrative = buildRecoveryNarrative(data);
+  narrativeEl.innerHTML = `
+    <div class="insight-block"><span>요약</span><p>${narrative.summary}</p></div>
+    <div class="insight-block"><span>해석</span><p>${narrative.insight}</p></div>
+    <div class="insight-block"><span>다음 단계</span><p>${narrative.next}</p></div>
+  `;
+  preview.textContent = buildReportMarkdown(data, narrative);
+}
+
+function buildReportMarkdown(data = getReportData(), narrative = buildRecoveryNarrative(data)) {
+  const lines = [];
+  lines.push("# Long Thought Recovery Report");
+  lines.push("");
+  lines.push(`- Generated: ${toISODate(new Date())}`);
+  lines.push(`- Start date: ${state.startDate}`);
+  lines.push(`- Tracked days: ${data.trackedDays} / 56`);
+  if (data.first) {
+    lines.push(`- Baseline window: ${data.baselineStart} to ${addDays(data.baselineStart, 6)}`);
+    lines.push(`- Recent window: ${addDays(data.latest, -6)} to ${data.latest}`);
+  }
+  lines.push("");
+  lines.push("## Before / After Metrics");
+  lines.push("");
+  lines.push("| Metric | Baseline | Recent | Change |");
+  lines.push("|---|---:|---:|---:|");
+  data.metrics.forEach(metric => {
+    const change = fmtReportChange(metric);
+    lines.push(`| ${metric.label} | ${fmtReportValue(metric.baseline, metric)} | ${fmtReportValue(metric.recent, metric)} | ${change.text} |`);
+  });
+  lines.push("");
+  lines.push("## Recovery Narrative");
+  lines.push("");
+  lines.push(`- Summary: ${narrative.summary}`);
+  lines.push(`- Insight: ${narrative.insight}`);
+  lines.push(`- Next step: ${narrative.next}`);
+  lines.push("");
+  lines.push("Generated locally in the browser. No server required.");
+  return lines.join("\n");
+}
+
+function exportReportMarkdown() {
+  const text = buildReportMarkdown();
+  exportFile(`long-thought-recovery-report-${toISODate(new Date())}.md`, text, "text/markdown;charset=utf-8");
+}
+
+function printReport() {
+  renderReport();
+  window.print();
 }
 
 function renderDashboard() {
@@ -1925,6 +2155,9 @@ function initEvents() {
   }));
   document.getElementById("goToday").addEventListener("click", () => { currentDate = toISODate(new Date()); switchView("daily"); });
   document.getElementById("goTrain").addEventListener("click", () => { trainDate = toISODate(new Date()); switchView("train"); });
+  document.getElementById("goReport").addEventListener("click", () => switchView("report"));
+  document.getElementById("exportReportMarkdown").addEventListener("click", exportReportMarkdown);
+  document.getElementById("printReport").addEventListener("click", printReport);
 
   document.getElementById("trainDayPicker").addEventListener("change", e => { trainDate = e.target.value; renderTrain(); });
   document.getElementById("trainSaveQuick").addEventListener("click", quickSaveFromTrain);
@@ -1991,8 +2224,8 @@ function initEvents() {
     renderDashboard();
     showToast("시작일을 저장했습니다.");
   });
-  document.getElementById("exportJson").addEventListener("click", () => exportFile("long-thought-recovery-v060-backup.json", JSON.stringify(state, null, 2), "application/json"));
-  document.getElementById("exportCsv").addEventListener("click", () => exportFile("long-thought-recovery-v060-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
+  document.getElementById("exportJson").addEventListener("click", () => exportFile("long-thought-recovery-v070-backup.json", JSON.stringify(state, null, 2), "application/json"));
+  document.getElementById("exportCsv").addEventListener("click", () => exportFile("long-thought-recovery-v070-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
   document.getElementById("importJson").addEventListener("change", async e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -2016,6 +2249,7 @@ function initEvents() {
     if (active.id === "flow") { renderSevenDayFeedback(); renderWeeklyComparison(); }
     if (active.id === "dashboard") renderRecentMiniChart();
     if (active.id === "analytics") renderAnalytics();
+    if (active.id === "report") renderReport();
   });
 }
 
@@ -2037,6 +2271,7 @@ document.addEventListener("click", e => {
   const handlers = {
     goToday: () => { currentDate = toISODate(new Date()); switchView("daily"); },
     goTrain: () => { trainDate = toISODate(new Date()); switchView("train"); },
+    goReport: () => switchView("report"),
     flowTimerStart: startFlowTimer,
     flowTimerPause: pauseFlowTimer,
     flowTimerReset: resetFlowTimer,
@@ -2064,9 +2299,11 @@ document.addEventListener("click", e => {
     nextDay: () => { currentDate = addDays(currentDate, 1); renderDaily(); },
     resetDay: () => { if (confirm("이 날짜의 입력을 지울까요?")) { delete state.entries[currentDate]; saveState(); renderDaily(); showToast("입력을 지웠습니다."); } },
     exportJournal: exportJournalMarkdown,
+    exportReportMarkdown: exportReportMarkdown,
+    printReport: printReport,
     saveStartDate: () => { const val = document.getElementById("startDateInput").value; if (!val) return; state.startDate = val; saveState(); renderDashboard(); renderFlow(); showToast("시작일을 저장했습니다."); },
-    exportJson: () => exportFile("long-thought-recovery-v060-backup.json", JSON.stringify(state, null, 2), "application/json"),
-    exportCsv: () => exportFile("long-thought-recovery-v060-tracker.csv", toCsv(), "text/csv;charset=utf-8")
+    exportJson: () => exportFile("long-thought-recovery-v070-backup.json", JSON.stringify(state, null, 2), "application/json"),
+    exportCsv: () => exportFile("long-thought-recovery-v070-tracker.csv", toCsv(), "text/csv;charset=utf-8")
   };
   if (handlers[button.id]) handlers[button.id]();
 });
@@ -2104,6 +2341,7 @@ function bootApp() {
   safeRun("renderDashboard", renderDashboard);
   safeRun("renderWeekly", renderWeekly);
   safeRun("renderTrain", renderTrain);
+  safeRun("renderReport", renderReport);
   safeRun("renderDaily", renderDaily);
   safeRun("initEvents", initEvents);
   safeRun("saveState", saveState);
