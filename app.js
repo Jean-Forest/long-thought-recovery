@@ -1730,6 +1730,52 @@ function initEvents() {
   });
 }
 
+
+// Defensive fallback for static hosting/cache edge cases.
+// If one direct listener fails during initialization, this delegated listener keeps core navigation and buttons working.
+document.addEventListener("click", e => {
+  const target = e.target;
+  if (!target || !target.closest) return;
+  const nav = target.closest(".nav-btn");
+  if (nav && nav.dataset && nav.dataset.view) {
+    switchView(nav.dataset.view);
+    return;
+  }
+  const button = target.closest("button");
+  if (!button || !button.id) return;
+  const handlers = {
+    goToday: () => { currentDate = toISODate(new Date()); switchView("daily"); },
+    goTrain: () => { trainDate = toISODate(new Date()); switchView("train"); },
+    flowTimerStart: startFlowTimer,
+    flowTimerPause: pauseFlowTimer,
+    flowTimerReset: resetFlowTimer,
+    flowTimerComplete: () => completeFlowSession(false),
+    flowSaveSessionNote: saveFlowSessionNote,
+    flowSaveEvening: saveEveningReflection,
+    flowGoDaily: () => { currentDate = toISODate(new Date()); switchView("daily"); },
+    trainSaveQuick: quickSaveFromTrain,
+    timerStart: startTimer,
+    timerPause: pauseTimer,
+    timerReset: resetTimer,
+    timerComplete: completeTimer,
+    mathGenerate: () => { stopMathTimer(); mathSession = null; createMathSession(); showToast("새 계산 문제를 만들었습니다."); },
+    mathStart: startMathTimer,
+    mathGrade: gradeAndSaveMathSession,
+    refreshPrompts: () => { promptVariant += 1; renderPromptCards("trainPrompts", trainDate, false); showToast("새 프롬프트를 만들었습니다."); },
+    copyPrompts: async () => { const ok = await copyText(promptText(trainDate)); showToast(ok ? "프롬프트를 복사했습니다." : "복사에 실패했습니다."); },
+    copyPromptsDash: async () => { const ok = await copyText(promptText(toISODate(new Date()))); showToast(ok ? "프롬프트를 복사했습니다." : "복사에 실패했습니다."); },
+    usePromptAsNote: () => { const entry = getEntry(trainDate); entry.note = appendNote(entry.note, promptText(trainDate)); state.entries[trainDate] = entry; saveState(); showToast("프롬프트를 오늘 메모에 넣었습니다."); },
+    prevDay: () => { currentDate = addDays(currentDate, -1); renderDaily(); },
+    nextDay: () => { currentDate = addDays(currentDate, 1); renderDaily(); },
+    resetDay: () => { if (confirm("이 날짜의 입력을 지울까요?")) { delete state.entries[currentDate]; saveState(); renderDaily(); showToast("입력을 지웠습니다."); } },
+    exportJournal: exportJournalMarkdown,
+    saveStartDate: () => { const val = document.getElementById("startDateInput").value; if (!val) return; state.startDate = val; saveState(); renderDashboard(); renderFlow(); showToast("시작일을 저장했습니다."); },
+    exportJson: () => exportFile("long-thought-recovery-v051-backup.json", JSON.stringify(state, null, 2), "application/json"),
+    exportCsv: () => exportFile("long-thought-recovery-v051-tracker.csv", toCsv(), "text/csv;charset=utf-8")
+  };
+  if (handlers[button.id]) handlers[button.id]();
+});
+
 window.addEventListener("beforeinstallprompt", e => {
   e.preventDefault();
   deferredPrompt = e;
@@ -1749,11 +1795,27 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(() => {}));
 }
 
-renderPlan();
-renderFlow();
-renderDashboard();
-renderWeekly();
-renderTrain();
-renderDaily();
-initEvents();
-saveState();
+function safeRun(label, fn) {
+  try {
+    fn();
+  } catch (err) {
+    console.error(`[Long Thought Recovery] ${label} failed`, err);
+  }
+}
+
+function bootApp() {
+  safeRun("renderPlan", renderPlan);
+  safeRun("renderFlow", renderFlow);
+  safeRun("renderDashboard", renderDashboard);
+  safeRun("renderWeekly", renderWeekly);
+  safeRun("renderTrain", renderTrain);
+  safeRun("renderDaily", renderDaily);
+  safeRun("initEvents", initEvents);
+  safeRun("saveState", saveState);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootApp);
+} else {
+  bootApp();
+}

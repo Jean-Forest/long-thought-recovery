@@ -2,7 +2,7 @@
 
 짧은 자극에 익숙해진 생활 패턴에서 벗어나, 8주 동안 긴 생각, 짧은 계산, 시각화, 독서, 운동, 수면을 다시 훈련하는 개인 회복 루틴 앱입니다.
 
-> 현재 버전은 v0.5.0 Mental Math Training MVP입니다. 서버가 없고, 로그인도 없으며, 기록은 사용자의 브라우저 localStorage에 저장됩니다.
+> 현재 버전은 v0.5.1 Mental Math Training MVP입니다. 서버가 없고, 로그인도 없으며, 기록은 사용자의 브라우저 localStorage에 저장됩니다.
 
 ## Live App
 
@@ -95,7 +95,7 @@ Windows에서는 파일을 더블클릭하면 됩니다.
 기본 라이선스는 MIT로 설정되어 있습니다. 공개 배포 전 라이선스 방향을 다시 검토하려면 [docs/license-decision.md](docs/license-decision.md)를 참고하세요.
 
 
-## v0.5.0
+## v0.5.1
 
 - 계산 문제 자동 생성
 - 답안 입력 및 채점

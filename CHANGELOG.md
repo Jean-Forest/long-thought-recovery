@@ -1,3 +1,11 @@
+
+## v0.5.1 — Interaction Hotfix
+
+Fixed:
+- Added cache-busting asset URLs for GitHub Pages updates.
+- Added defensive boot sequence so one render error cannot block all click handlers.
+- Added delegated fallback click handling for core navigation and training buttons.
+
 # Changelog
 
 ## v0.5.0 — Mental Math Training MVP
