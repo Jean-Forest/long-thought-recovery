@@ -2,7 +2,7 @@
 
 짧은 자극에 익숙해진 생활 패턴에서 벗어나, 8주 동안 긴 생각, 짧은 계산, 시각화, 독서, 운동, 수면을 다시 훈련하는 개인 회복 루틴 앱입니다.
 
-> 현재 버전은 v0.5.1 Mental Math Training MVP입니다. 서버가 없고, 로그인도 없으며, 기록은 사용자의 브라우저 localStorage에 저장됩니다.
+> 현재 버전은 v0.6.0 Visualization Training MVP입니다. 서버가 없고, 로그인도 없으며, 기록은 사용자의 브라우저 localStorage에 저장됩니다.
 
 ## Live App
 
@@ -19,6 +19,7 @@ https://jean-forest.github.io/long-thought-recovery/
 - 하루 체크리스트와 자동 점수 계산
 - Long Thought, 계산, 시각화 타이머
 - 계산 문제 자동 생성, 답안 채점, 정답률 저장
+- 시각화 과제 자동 생성, 세션 자기평가, 2D Mental Rotation 미니 과제
 - 매일 자동 훈련 프롬프트
 - 주차별 평균 점수, 쇼츠 사용량, 수면, 집중감, 머리 맑음, 시각화 선명도 그래프
 - 회복 저널: 머리 맑음, 집중감, 시각화 선명도, 방해요인, 메모
@@ -95,9 +96,19 @@ Windows에서는 파일을 더블클릭하면 됩니다.
 기본 라이선스는 MIT로 설정되어 있습니다. 공개 배포 전 라이선스 방향을 다시 검토하려면 [docs/license-decision.md](docs/license-decision.md)를 참고하세요.
 
 
-## v0.5.1
+## v0.6.0
 
 - 계산 문제 자동 생성
 - 답안 입력 및 채점
 - 정답률, 소요 시간, 체감 난이도 저장
 - 최근 계산 정확도 기반 난이도 피드백
+
+
+## v0.6.0 — Visualization Training MVP
+
+- 시각화 과제 자동 생성
+- Object Recall, Room Mapping, Mental Rotation, Scene Imagery 과제 유형
+- 시각화 타이머와 세션 자기평가
+- 선명도, 이미지 유지력, 공간/회전감, 체감 난이도 저장
+- 2D Mental Rotation 미니 과제와 정답 피드백
+- CSV export에 최근 시각화 세션 필드 추가

@@ -1,5 +1,6 @@
-const STORAGE_KEY = "deep-thinking-8week-v5";
-const LEGACY_STORAGE_KEY = "deep-thinking-8week-v4";
+const STORAGE_KEY = "deep-thinking-8week-v6";
+const LEGACY_STORAGE_KEY = "deep-thinking-8week-v5";
+const OLDER_V4_STORAGE_KEY = "deep-thinking-8week-v4";
 const OLDER_V3_STORAGE_KEY = "deep-thinking-8week-v3";
 const OLDER_STORAGE_KEY = "deep-thinking-8week-v2";
 const OLDEST_STORAGE_KEY = "deep-thinking-8week-v1";
@@ -105,6 +106,67 @@ const visualizationTasks = [
   "짧은 문장 하나를 읽고, 인물·공간·소리·빛·움직임을 각각 하나씩 추가해 장면화하세요."
 ];
 
+
+const visualizationTaskCatalog = [
+  {
+    id: "object_recall",
+    label: "Object Recall",
+    title: "물체 관찰 후 복원",
+    minWeek: 1,
+    instructions: [
+      "책상 위 물건 하나를 30초 관찰한 뒤 눈을 감고 형태, 색, 그림자, 방향을 복원하세요.",
+      "컵, 키보드, 펜처럼 단순한 물체 하나를 고르고, 눈을 감은 뒤 손잡이/모서리/빛의 방향을 떠올리세요.",
+      "물체를 보지 않고 머릿속에서 천천히 한 바퀴 돌려보세요. 흐려지는 지점을 메모하세요."
+    ],
+    steps: ["30초 관찰", "눈 감고 60초 복원", "실제와 비교", "틀린 부분 1개 기록"]
+  },
+  {
+    id: "room_mapping",
+    label: "Room Mapping",
+    title: "공간 구조 떠올리기",
+    minWeek: 2,
+    instructions: [
+      "내 방 문 앞에서 책상까지 천천히 걸어가는 장면을 머릿속으로 재생하고, 물건 위치 5개를 확인하세요.",
+      "자주 가는 카페나 강의실을 위에서 내려다보는 평면도로 떠올리고 문, 창문, 좌석 위치를 배치하세요.",
+      "최근 걸었던 길을 출발점부터 도착점까지 5장면으로 나눠서 재생하세요."
+    ],
+    steps: ["입구 위치 잡기", "큰 가구/벽/창문 배치", "시선 이동", "종이에 간단 평면도 기록"]
+  },
+  {
+    id: "mental_rotation",
+    label: "Mental Rotation",
+    title: "2D 도형 회전",
+    minWeek: 3,
+    instructions: [
+      "간단한 방향 기호를 머릿속으로 90도 또는 180도 회전한 뒤 선택지에서 답을 고르세요.",
+      "L 모양을 머릿속에 고정하고 시계 방향으로 돌려보세요. 손으로 그리기 전에 답을 먼저 정하세요.",
+      "화살표 방향을 보지 않고 회전 결과를 예측하세요. 속도보다 정확도를 우선하세요."
+    ],
+    steps: ["원래 모양 5초 관찰", "눈을 감고 회전", "답 선택", "오답이면 회전 단계 메모"]
+  },
+  {
+    id: "scene_imagery",
+    label: "Scene Imagery",
+    title: "문장 장면화",
+    minWeek: 4,
+    instructions: [
+      "'비 오는 저녁, 노란 가로등 아래 빨간 우산이 놓여 있다'를 장면으로 만들고 빛, 소리, 바닥 반사를 추가하세요.",
+      "'조용한 도서관 창가에 파란 책 한 권이 펼쳐져 있다'를 떠올리고 책장, 창밖, 그림자 방향을 추가하세요.",
+      "'새벽 공원 벤치 옆에 흰 운동화 한 켤레가 놓여 있다'를 떠올리고 공기, 바닥 질감, 거리감을 추가하세요."
+    ],
+    steps: ["핵심 물체 배치", "빛과 그림자 추가", "소리/질감 추가", "장면을 한 문장으로 설명"]
+  }
+];
+
+const rotationTasks = [
+  { level: 1, shape: "↑", turn: "시계 방향 90도", answer: "→", options: ["↑", "→", "↓", "←"], explanation: "위쪽 화살표를 시계 방향으로 90도 돌리면 오른쪽을 가리킵니다." },
+  { level: 1, shape: "→", turn: "180도", answer: "←", options: ["↑", "→", "↓", "←"], explanation: "오른쪽 화살표를 180도 돌리면 왼쪽을 가리킵니다." },
+  { level: 2, shape: "└", turn: "시계 방향 90도", answer: "┌", options: ["┌", "┐", "┘", "└"], explanation: "아래-왼쪽 모서리 모양을 시계 방향으로 90도 돌리면 위-왼쪽 모서리처럼 보입니다." },
+  { level: 2, shape: "┐", turn: "시계 방향 180도", answer: "└", options: ["┌", "┐", "┘", "└"], explanation: "위-오른쪽 모서리를 180도 돌리면 아래-왼쪽 모서리입니다." },
+  { level: 3, shape: "▰→", turn: "시계 방향 90도", answer: "▰↓", options: ["▰↑", "▰→", "▰↓", "▰←"], explanation: "오른쪽 방향을 시계 방향 90도 돌리면 아래 방향입니다." },
+  { level: 4, shape: "L", turn: "시계 방향 180도", answer: "⅃", options: ["L", "⅃", "Γ", "⅂"], explanation: "L을 180도 돌리면 반대쪽 모서리 형태가 됩니다." }
+];
+
 const readingPrompts = [
   "오늘 읽은 2쪽에서 핵심 주장 1개와 근거 2개를 찾으세요.",
   "한 문단을 읽고, 저자가 말하지 않았지만 전제하고 있는 생각을 적으세요.",
@@ -143,6 +205,8 @@ let flowRatings = {
 
 let mathSession = null;
 let mathTimerInterval = null;
+let visualizationSession = null;
+let visualTimerInterval = null;
 
 const routineModeLabels = {
   recovery: "Recovery Mode",
@@ -158,7 +222,7 @@ const routineModeDescriptions = {
 
 function defaultState() {
   return {
-    version: 5,
+    version: 6,
     startDate: toISODate(new Date()),
     entries: {}
   };
@@ -166,9 +230,11 @@ function defaultState() {
 
 function loadState() {
   try {
-    const rawV5 = localStorage.getItem(STORAGE_KEY);
+    const rawV6 = localStorage.getItem(STORAGE_KEY);
+    if (rawV6) return normalizeState(JSON.parse(rawV6));
+    const rawV5 = localStorage.getItem(LEGACY_STORAGE_KEY);
     if (rawV5) return normalizeState(JSON.parse(rawV5));
-    const rawV4 = localStorage.getItem(LEGACY_STORAGE_KEY);
+    const rawV4 = localStorage.getItem(OLDER_V4_STORAGE_KEY);
     if (rawV4) return normalizeState(JSON.parse(rawV4));
     const rawV3 = localStorage.getItem(OLDER_V3_STORAGE_KEY);
     if (rawV3) return normalizeState(JSON.parse(rawV3));
@@ -185,12 +251,13 @@ function loadState() {
 function normalizeState(input) {
   const base = defaultState();
   const next = { ...base, ...(input || {}) };
-  next.version = 5;
+  next.version = 6;
   next.entries = next.entries || {};
   Object.keys(next.entries).forEach(date => {
     next.entries[date] = { ...emptyEntry(), ...next.entries[date] };
     if (next.entries[date].mathSession && !next.entries[date].mathSessions) next.entries[date].mathSessions = [next.entries[date].mathSession];
     if (!Array.isArray(next.entries[date].mathSessions)) next.entries[date].mathSessions = [];
+    if (!Array.isArray(next.entries[date].visualizationSessions)) next.entries[date].visualizationSessions = [];
   });
   return next;
 }
@@ -246,7 +313,8 @@ function emptyEntry() {
     blocker: "",
     note: "",
     routineMode: "",
-    mathSessions: []
+    mathSessions: [],
+    visualizationSessions: []
   };
 }
 
@@ -831,6 +899,7 @@ function renderTrain() {
   document.getElementById("trainDayPicker").value = trainDate;
   renderPromptCards("trainPrompts", trainDate, false);
   renderMathModule();
+  renderVisualizationModule();
   setTimerMode(timer.mode, false);
 }
 
@@ -1066,11 +1135,227 @@ function gradeAndSaveMathSession() {
 }
 
 
+function visualizationLevelForDate(date, mode = getSelectedRoutineMode(date, getAdaptiveAnalysis(date))) {
+  const week = weekIndexFromDay(dayIndex(date));
+  let level = week <= 2 ? 1 : week <= 4 ? 2 : week <= 6 ? 3 : 4;
+  if (mode === "recovery") level = Math.max(1, level - 1);
+  if (mode === "growth") level = Math.min(5, level + 1);
+  return level;
+}
+
+function availableVisualizationTasks(date, mode) {
+  const week = weekIndexFromDay(dayIndex(date));
+  const level = visualizationLevelForDate(date, mode);
+  return visualizationTaskCatalog.filter(task => task.minWeek <= Math.max(week, level + 1));
+}
+
+function generateVisualizationTask(date, mode = getSelectedRoutineMode(date, getAdaptiveAnalysis(date))) {
+  const level = visualizationLevelForDate(date, mode);
+  const available = availableVisualizationTasks(date, mode);
+  const seed = seededNumber(`${date}-${promptVariant}-visual-${level}-${mode}`);
+  const task = available[seed % available.length] || visualizationTaskCatalog[0];
+  const instruction = task.instructions[seed % task.instructions.length];
+  const rotationPool = rotationTasks.filter(item => item.level <= Math.max(1, level));
+  const rotationTask = rotationPool[seed % rotationPool.length] || rotationTasks[0];
+  const plan = getPlanForDate(date);
+  const routine = getRoutinePlanForMode(plan, mode);
+  return {
+    date,
+    mode,
+    level,
+    id: task.id,
+    label: task.label,
+    title: task.title,
+    instruction,
+    steps: task.steps,
+    timerMinutes: routine.visual,
+    rotationTask
+  };
+}
+
+function latestVisualizationSession(entry) {
+  const sessions = Array.isArray(entry.visualizationSessions) ? entry.visualizationSessions : [];
+  return sessions.length ? sessions[sessions.length - 1] : null;
+}
+
+function recentVisualizationSessions(limit = 5) {
+  const sessions = [];
+  for (let i = 55; i >= 0; i--) {
+    const date = addDays(state.startDate, i);
+    const entry = getEntry(date);
+    const list = Array.isArray(entry.visualizationSessions) ? entry.visualizationSessions : [];
+    list.forEach(session => sessions.push({ ...session, date }));
+  }
+  return sessions.filter(s => s.savedAt || s.date).sort((a, b) => String(b.savedAt || b.date).localeCompare(String(a.savedAt || a.date))).slice(0, limit);
+}
+
+function visualizationFeedbackSentence() {
+  const recent = recentVisualizationSessions(3);
+  if (!recent.length) return "아직 시각화 세션 기록이 없습니다. 오늘 첫 과제를 저장해보세요.";
+  const avgVivid = recent.reduce((sum, s) => sum + Number(s.vividness || 0), 0) / recent.length;
+  const avgStability = recent.reduce((sum, s) => sum + Number(s.stability || 0), 0) / recent.length;
+  const rotationRate = recent.filter(s => s.rotationCorrect === true).length / recent.length;
+  if (recent.length >= 3 && avgVivid >= 4 && avgStability >= 4) return "최근 시각화 선명도와 유지력이 안정적입니다. 다음 세션에서는 Mental Rotation 과제를 추가해도 됩니다.";
+  if (avgVivid < 3) return "시각화 선명도가 낮습니다. 오늘은 복잡한 장면보다 단일 물체 관찰 후 복원을 추천합니다.";
+  if (rotationRate < 0.5) return "회전 문제 정확도가 낮습니다. 도형을 바로 돌리기보다 원래 모양을 5초 더 고정하세요.";
+  return "현재 흐름은 안정적입니다. 선명도보다 이미지가 사라졌을 때 다시 불러오는 복귀 연습을 우선하세요.";
+}
+
+function createVisualizationSession(forceNew = false) {
+  const date = trainDate || currentDate;
+  const mode = getSelectedRoutineMode(date, getAdaptiveAnalysis(date));
+  if (!forceNew && visualizationSession && visualizationSession.date === date) return visualizationSession;
+  visualizationSession = {
+    ...generateVisualizationTask(date, mode),
+    startedAt: null,
+    endedAt: null,
+    remainingSeconds: 0,
+    rotationChoice: "",
+    rotationCorrect: null
+  };
+  visualizationSession.remainingSeconds = visualizationSession.timerMinutes * 60;
+  return visualizationSession;
+}
+
+function renderVisualizationModule() {
+  const session = createVisualizationSession(false);
+  const badge = document.getElementById("visualTaskBadge");
+  if (badge) badge.textContent = session.label;
+  const levelBadge = document.getElementById("visualLevelBadge");
+  if (levelBadge) levelBadge.textContent = `Level ${session.level} · ${routineModeLabels[session.mode] || "Standard Mode"}`;
+  const feedback = document.getElementById("visualFeedback");
+  if (feedback) {
+    const recent = recentVisualizationSessions(3);
+    const recentText = recent.length ? `최근 ${recent.length}회 평균 선명도 ${(recent.reduce((s, x) => s + Number(x.vividness || 0), 0) / recent.length).toFixed(1)}/5` : "최근 시각화 기록 없음";
+    feedback.innerHTML = `<strong>${recentText}</strong><br>${visualizationFeedbackSentence()}`;
+  }
+  const title = document.getElementById("visualTaskTitle");
+  if (title) title.textContent = session.title;
+  const instruction = document.getElementById("visualTaskInstruction");
+  if (instruction) instruction.textContent = session.instruction;
+  const steps = document.getElementById("visualTaskSteps");
+  if (steps) steps.innerHTML = session.steps.map(step => `<li>${step}</li>`).join("");
+  renderRotationTask(session.rotationTask);
+  updateVisualTimerDisplay();
+  const meta = document.getElementById("visualSessionMeta");
+  if (meta) meta.textContent = `${session.timerMinutes}분 · ${session.label}`;
+  const result = document.getElementById("rotationResult");
+  if (result) { result.classList.add("hidden"); result.innerHTML = ""; }
+}
+
+function renderRotationTask(task) {
+  const prompt = document.getElementById("rotationPrompt");
+  if (prompt) prompt.innerHTML = `<strong>${task.shape}</strong> 를 ${task.turn} 회전하면 어떤 모양인가요?`;
+  const options = document.getElementById("rotationOptions");
+  if (!options) return;
+  options.innerHTML = task.options.map(option => `<button type="button" class="rotation-option" data-rotation-option="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("");
+}
+
+function updateVisualTimerDisplay() {
+  const el = document.getElementById("visualTimer");
+  if (!el) return;
+  const session = createVisualizationSession(false);
+  const seconds = Math.max(0, Number(session.remainingSeconds ?? session.timerMinutes * 60));
+  el.textContent = formatElapsed(seconds);
+}
+
+function startVisualizationTimer() {
+  const session = createVisualizationSession(false);
+  session.startedAt = Date.now();
+  session.endedAt = null;
+  session.remainingSeconds = session.timerMinutes * 60;
+  if (visualTimerInterval) clearInterval(visualTimerInterval);
+  visualTimerInterval = setInterval(() => {
+    session.remainingSeconds = Math.max(0, Number(session.remainingSeconds || 0) - 1);
+    updateVisualTimerDisplay();
+    if (session.remainingSeconds <= 0) {
+      stopVisualizationTimer(false);
+      showToast("시각화 타이머가 끝났습니다. 자기평가를 저장하세요.");
+    }
+  }, 1000);
+  const meta = document.getElementById("visualSessionMeta");
+  if (meta) meta.textContent = `${session.label} 진행 중`;
+  showToast("시각화 세션을 시작했습니다.");
+}
+
+function stopVisualizationTimer(markEnded = true) {
+  if (visualTimerInterval) clearInterval(visualTimerInterval);
+  visualTimerInterval = null;
+  if (visualizationSession && markEnded) visualizationSession.endedAt = Date.now();
+  const meta = document.getElementById("visualSessionMeta");
+  if (meta && visualizationSession) meta.textContent = `완료 대기 · ${visualizationSession.label}`;
+}
+
+function chooseRotationOption(option) {
+  const session = createVisualizationSession(false);
+  session.rotationChoice = option;
+  session.rotationCorrect = option === session.rotationTask.answer;
+  document.querySelectorAll(".rotation-option").forEach(btn => btn.classList.toggle("selected", btn.dataset.rotationOption === option));
+  const result = document.getElementById("rotationResult");
+  if (result) {
+    result.classList.remove("hidden");
+    result.innerHTML = session.rotationCorrect ? `<strong>정답입니다.</strong><br>${session.rotationTask.explanation}` : `<strong>오답입니다. 정답은 ${session.rotationTask.answer}입니다.</strong><br>${session.rotationTask.explanation}`;
+  }
+}
+
+function saveVisualizationSession() {
+  const session = createVisualizationSession(false);
+  stopVisualizationTimer(true);
+  const now = Date.now();
+  if (!session.startedAt) session.startedAt = now;
+  if (!session.endedAt) session.endedAt = now;
+  const elapsed = Math.max(1, Math.round((session.endedAt - session.startedAt) / 1000));
+  const fallbackDuration = session.timerMinutes * 60 - Number(session.remainingSeconds || 0);
+  const durationSeconds = Math.max(1, Math.min(session.timerMinutes * 60, elapsed || fallbackDuration));
+  const vividness = Number(document.getElementById("visualVividnessScore")?.value || 3);
+  const stability = Number(document.getElementById("visualStabilityScore")?.value || 3);
+  const spatial = Number(document.getElementById("visualSpatialScore")?.value || 3);
+  const difficulty = Number(document.getElementById("visualDifficultyScore")?.value || 3);
+  const note = document.getElementById("visualSessionNote")?.value.trim() || "";
+  const savedSession = {
+    date: trainDate,
+    mode: session.mode,
+    level: session.level,
+    taskId: session.id,
+    taskLabel: session.label,
+    taskTitle: session.title,
+    instruction: session.instruction,
+    durationSeconds,
+    vividness,
+    stability,
+    spatial,
+    difficulty,
+    rotationPrompt: `${session.rotationTask.shape} · ${session.rotationTask.turn}`,
+    rotationAnswer: session.rotationTask.answer,
+    rotationChoice: session.rotationChoice || "",
+    rotationCorrect: session.rotationCorrect,
+    note,
+    savedAt: new Date().toISOString()
+  };
+  const entry = getEntry(trainDate);
+  const sessions = Array.isArray(entry.visualizationSessions) ? entry.visualizationSessions : [];
+  sessions.push(savedSession);
+  entry.visualizationSessions = sessions.slice(-10);
+  entry.visualMin = Math.max(Number(entry.visualMin || 0), Math.max(1, Math.round(durationSeconds / 60)));
+  entry.visualVividness = vividness;
+  entry.note = appendNote(entry.note, `[시각화 훈련] ${savedSession.taskLabel} · ${Math.round(durationSeconds / 60)}분 · 선명도 ${vividness}/5 · 유지력 ${stability}/5 · 공간감 ${spatial}/5 · 회전 ${savedSession.rotationCorrect === true ? "정답" : savedSession.rotationCorrect === false ? "오답" : "미선택"}${note ? `\n${note}` : ""}`);
+  state.entries[trainDate] = entry;
+  saveState();
+  const meta = document.getElementById("visualSessionMeta");
+  if (meta) meta.textContent = `저장됨 · 선명도 ${vividness}/5`;
+  renderDashboard();
+  renderSevenDayFeedback();
+  renderDaily();
+  showToast("시각화 세션을 저장했습니다.");
+}
+
+
+
 function getPrompts(date) {
   return {
     long: pickFrom(longThoughtQuestions, date, 1),
     calc: createCalcProblems(date),
-    visual: pickFrom(visualizationTasks, date, 2),
+    visual: generateVisualizationTask(date).instruction,
     reading: pickFrom(readingPrompts, date, 3)
   };
 }
@@ -1301,9 +1586,7 @@ function renderWeekly() {
       Object.entries(checks).forEach(([k, v]) => { if (v) itemScores[k] += 1; });
       const score = scoreEntry(e, p);
       scoreSum += score;
-      const latestAccuracy = latestMathAccuracy(entry);
-    if (latestAccuracy !== null) { mathAccuracySum += latestAccuracy; mathCount += 1; }
-    if (score >= 6) success += 1;
+      if (score >= 6) success += 1;
     }
     const entries = Object.entries(itemScores);
     const sortedBest = [...entries].sort((a,b) => b[1] - a[1]);
@@ -1585,7 +1868,7 @@ function toCsv() {
   const header = [
     "date", "day", "week", "score", "shortsOk", "morningQuiet", "shortsMinutes",
     "longThoughtMin", "calcMin", "visualMin", "readingPages", "exerciseMin", "sleepHours",
-    "clarity", "focus", "visualVividness", "mathAccuracy", "mathCorrect", "mathTotal", "mathLevel", "mathDurationSeconds", "blocker", "note"
+    "clarity", "focus", "visualVividness", "mathAccuracy", "mathCorrect", "mathTotal", "mathLevel", "mathDurationSeconds", "visualTask", "visualSessionVividness", "visualStability", "visualSpatial", "visualRotationCorrect", "blocker", "note"
   ];
   const rows = [header.join(",")];
   for (let i = 0; i < 56; i++) {
@@ -1594,10 +1877,11 @@ function toCsv() {
     const plan = plans[Math.floor(i / 7)];
     const score = isTracked(date) ? scoreEntry(e, plan) : "";
     const m = latestMathSession(e) || {};
+    const v = latestVisualizationSession(e) || {};
     const row = [
       date, i + 1, plan.week, score, e.shortsOk, e.morningQuiet, e.shortsMinutes,
       e.longThoughtMin, e.calcMin, e.visualMin, e.readingPages, e.exerciseMin, e.sleepHours,
-      e.clarity, e.focus, e.visualVividness, m.accuracy ?? "", m.correct ?? "", m.total ?? "", m.level ?? "", m.durationSeconds ?? "", e.blocker, e.note
+      e.clarity, e.focus, e.visualVividness, m.accuracy ?? "", m.correct ?? "", m.total ?? "", m.level ?? "", m.durationSeconds ?? "", v.taskLabel ?? "", v.vividness ?? "", v.stability ?? "", v.spatial ?? "", v.rotationCorrect ?? "", e.blocker, e.note
     ].map(v => `"${String(v ?? "").replaceAll('"','""')}"`).join(",");
     rows.push(row);
   }
@@ -1606,7 +1890,7 @@ function toCsv() {
 
 function saveDailyForm() {
   const previous = getEntry(currentDate);
-  state.entries[currentDate] = { ...collectForm(), routineMode: previous.routineMode || "", mathSessions: previous.mathSessions || [] };
+  state.entries[currentDate] = { ...collectForm(), routineMode: previous.routineMode || "", mathSessions: previous.mathSessions || [], visualizationSessions: previous.visualizationSessions || [] };
   saveState();
   renderDailyScore();
   showToast();
@@ -1654,6 +1938,11 @@ function initEvents() {
   document.getElementById("mathStart").addEventListener("click", startMathTimer);
   document.getElementById("mathGrade").addEventListener("click", gradeAndSaveMathSession);
   document.getElementById("mathCountSelect").addEventListener("change", () => { stopMathTimer(); mathSession = null; createMathSession(); });
+  document.getElementById("visualGenerate").addEventListener("click", () => { stopVisualizationTimer(false); visualizationSession = null; promptVariant += 1; createVisualizationSession(true); renderVisualizationModule(); showToast("새 시각화 과제를 만들었습니다."); });
+  document.getElementById("visualStart").addEventListener("click", startVisualizationTimer);
+  document.getElementById("visualStop").addEventListener("click", () => { stopVisualizationTimer(true); showToast("시각화 타이머를 완료 처리했습니다."); });
+  document.getElementById("visualSave").addEventListener("click", saveVisualizationSession);
+  document.getElementById("rotationOptions").addEventListener("click", e => { const btn = e.target.closest("button[data-rotation-option]"); if (btn) chooseRotationOption(btn.dataset.rotationOption); });
   document.getElementById("refreshPrompts").addEventListener("click", () => { promptVariant += 1; renderPromptCards("trainPrompts", trainDate, false); showToast("새 프롬프트를 만들었습니다."); });
   document.getElementById("copyPrompts").addEventListener("click", async () => {
     const ok = await copyText(promptText(trainDate));
@@ -1702,8 +1991,8 @@ function initEvents() {
     renderDashboard();
     showToast("시작일을 저장했습니다.");
   });
-  document.getElementById("exportJson").addEventListener("click", () => exportFile("long-thought-recovery-v050-backup.json", JSON.stringify(state, null, 2), "application/json"));
-  document.getElementById("exportCsv").addEventListener("click", () => exportFile("long-thought-recovery-v050-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
+  document.getElementById("exportJson").addEventListener("click", () => exportFile("long-thought-recovery-v060-backup.json", JSON.stringify(state, null, 2), "application/json"));
+  document.getElementById("exportCsv").addEventListener("click", () => exportFile("long-thought-recovery-v060-tracker.csv", toCsv(), "text/csv;charset=utf-8"));
   document.getElementById("importJson").addEventListener("change", async e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1741,6 +2030,8 @@ document.addEventListener("click", e => {
     switchView(nav.dataset.view);
     return;
   }
+  const rotation = target.closest("button[data-rotation-option]");
+  if (rotation) { chooseRotationOption(rotation.dataset.rotationOption); return; }
   const button = target.closest("button");
   if (!button || !button.id) return;
   const handlers = {
@@ -1761,6 +2052,10 @@ document.addEventListener("click", e => {
     mathGenerate: () => { stopMathTimer(); mathSession = null; createMathSession(); showToast("새 계산 문제를 만들었습니다."); },
     mathStart: startMathTimer,
     mathGrade: gradeAndSaveMathSession,
+    visualGenerate: () => { stopVisualizationTimer(false); visualizationSession = null; promptVariant += 1; createVisualizationSession(true); renderVisualizationModule(); showToast("새 시각화 과제를 만들었습니다."); },
+    visualStart: startVisualizationTimer,
+    visualStop: () => { stopVisualizationTimer(true); showToast("시각화 타이머를 완료 처리했습니다."); },
+    visualSave: saveVisualizationSession,
     refreshPrompts: () => { promptVariant += 1; renderPromptCards("trainPrompts", trainDate, false); showToast("새 프롬프트를 만들었습니다."); },
     copyPrompts: async () => { const ok = await copyText(promptText(trainDate)); showToast(ok ? "프롬프트를 복사했습니다." : "복사에 실패했습니다."); },
     copyPromptsDash: async () => { const ok = await copyText(promptText(toISODate(new Date()))); showToast(ok ? "프롬프트를 복사했습니다." : "복사에 실패했습니다."); },
@@ -1770,8 +2065,8 @@ document.addEventListener("click", e => {
     resetDay: () => { if (confirm("이 날짜의 입력을 지울까요?")) { delete state.entries[currentDate]; saveState(); renderDaily(); showToast("입력을 지웠습니다."); } },
     exportJournal: exportJournalMarkdown,
     saveStartDate: () => { const val = document.getElementById("startDateInput").value; if (!val) return; state.startDate = val; saveState(); renderDashboard(); renderFlow(); showToast("시작일을 저장했습니다."); },
-    exportJson: () => exportFile("long-thought-recovery-v051-backup.json", JSON.stringify(state, null, 2), "application/json"),
-    exportCsv: () => exportFile("long-thought-recovery-v051-tracker.csv", toCsv(), "text/csv;charset=utf-8")
+    exportJson: () => exportFile("long-thought-recovery-v060-backup.json", JSON.stringify(state, null, 2), "application/json"),
+    exportCsv: () => exportFile("long-thought-recovery-v060-tracker.csv", toCsv(), "text/csv;charset=utf-8")
   };
   if (handlers[button.id]) handlers[button.id]();
 });

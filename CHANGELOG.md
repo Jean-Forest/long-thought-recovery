@@ -1,5 +1,17 @@
+# Changelog
 
-## v0.5.1 — Interaction Hotfix
+## v0.6.0 — Visualization Training MVP
+
+Added:
+- Visualization task generator by recovery week and routine mode.
+- Object Recall, Room Mapping, Mental Rotation, and Scene Imagery task types.
+- Visualization timer and session scoring.
+- Vividness, stability, spatial/rotation clarity, perceived difficulty, note, and duration saved to daily records.
+- 2D Mental Rotation mini task with multiple-choice answer checking.
+- Recent visualization feedback and CSV export fields.
+
+
+## v0.6.0 — Interaction Hotfix
 
 Fixed:
 - Added cache-busting asset URLs for GitHub Pages updates.
@@ -8,7 +20,7 @@ Fixed:
 
 # Changelog
 
-## v0.5.0 — Mental Math Training MVP
+## v0.6.0 — Mental Math Training MVP
 
 Added:
 - Mental math problem generator by recovery week and routine mode.

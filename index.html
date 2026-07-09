@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Long Thought Recovery v0.5.1</title>
+  <title>Long Thought Recovery v0.6.0</title>
   <meta name="theme-color" content="#111827">
   <meta name="description" content="Long Thought, 계산, 시각화, 독서, 수면, 운동을 8주간 기록하고 훈련하는 개인 회복 루틴 앱">
-  <link rel="manifest" href="manifest.json?v=0.5.1">
-  <link rel="stylesheet" href="styles.css?v=0.5.1">
+  <link rel="manifest" href="manifest.json?v=0.6.0">
+  <link rel="stylesheet" href="styles.css?v=0.6.0">
 </head>
 <body>
   <div class="app-shell">
@@ -16,7 +16,7 @@
         <div class="brand-mark">8W</div>
         <div>
           <h1>Deep Thinking</h1>
-          <p>8주 회복 루틴 v0.5.1</p>
+          <p>8주 회복 루틴 v0.6.0</p>
         </div>
       </div>
       <nav class="nav">
@@ -38,7 +38,7 @@
       <section id="flow" class="view active-view">
         <div class="flow-hero">
           <div>
-            <p class="eyebrow">Daily Flow v0.5.1</p>
+            <p class="eyebrow">Daily Flow v0.6.0</p>
             <h2 id="flowTodayTitle">오늘은 1주차 월요일입니다.</h2>
             <p class="hero-copy" id="flowTodaySub">오늘의 Long Thought를 시작하고, 저녁에는 회복 지표를 기록하세요.</p>
           </div>
@@ -233,7 +233,7 @@
           <section class="panel math-panel">
             <div class="panel-head">
               <div>
-                <h3>계산 훈련 v0.5.1</h3>
+                <h3>계산 훈련 v0.6.0</h3>
                 <p class="muted">문제 생성 → 답 입력 → 채점 → 오늘 기록 저장</p>
               </div>
               <span id="mathLevelBadge" class="pill">Level 1</span>
@@ -266,6 +266,87 @@
             </div>
             <div id="mathProblemList" class="math-problem-list"></div>
             <div id="mathResult" class="math-result hidden"></div>
+          </section>
+
+          <section class="panel visualization-panel">
+            <div class="panel-head">
+              <div>
+                <h3>시각화 훈련 v0.6.0</h3>
+                <p class="muted">과제 생성 → 타이머 → 자기평가 → 회전 문제 → 오늘 기록 저장</p>
+              </div>
+              <span id="visualTaskBadge" class="pill">Object Recall</span>
+            </div>
+            <div id="visualFeedback" class="visual-feedback"></div>
+            <div class="visual-task-card">
+              <div class="panel-head compact-head">
+                <h4 id="visualTaskTitle">오늘의 시각화 과제</h4>
+                <span id="visualLevelBadge" class="muted">Level 1</span>
+              </div>
+              <p id="visualTaskInstruction" class="visual-instruction">과제를 불러오는 중입니다.</p>
+              <ul id="visualTaskSteps" class="visual-steps"></ul>
+            </div>
+            <div class="visual-toolbar">
+              <button id="visualGenerate" class="secondary">새 과제</button>
+              <button id="visualStart" class="primary">시각화 시작</button>
+              <button id="visualStop" class="secondary">타이머 완료</button>
+            </div>
+            <div class="math-status visual-status">
+              <span id="visualTimer">00:00</span>
+              <span id="visualSessionMeta">시작 전</span>
+            </div>
+
+            <div class="rotation-card">
+              <div class="panel-head compact-head">
+                <h4>2D Mental Rotation 미니 과제</h4>
+                <span class="muted">머릿속으로 먼저 돌린 뒤 선택하세요.</span>
+              </div>
+              <p id="rotationPrompt" class="rotation-prompt">회전 과제를 불러오는 중입니다.</p>
+              <div id="rotationOptions" class="rotation-options"></div>
+              <div id="rotationResult" class="math-result hidden"></div>
+            </div>
+
+            <div class="visual-score-grid">
+              <label>선명도
+                <select id="visualVividnessScore">
+                  <option value="1">1 · 거의 안 떠오름</option>
+                  <option value="2">2 · 흐릿함</option>
+                  <option value="3" selected>3 · 보통</option>
+                  <option value="4">4 · 꽤 선명함</option>
+                  <option value="5">5 · 매우 선명함</option>
+                </select>
+              </label>
+              <label>이미지 유지력
+                <select id="visualStabilityScore">
+                  <option value="1">1 · 바로 사라짐</option>
+                  <option value="2">2 · 자주 끊김</option>
+                  <option value="3" selected>3 · 보통</option>
+                  <option value="4">4 · 꽤 유지됨</option>
+                  <option value="5">5 · 안정적으로 유지됨</option>
+                </select>
+              </label>
+              <label>공간/회전감
+                <select id="visualSpatialScore">
+                  <option value="1">1 · 방향감이 어려움</option>
+                  <option value="2">2 · 조금 어려움</option>
+                  <option value="3" selected>3 · 보통</option>
+                  <option value="4">4 · 비교적 명확함</option>
+                  <option value="5">5 · 매우 명확함</option>
+                </select>
+              </label>
+              <label>체감 난이도
+                <select id="visualDifficultyScore">
+                  <option value="1">1 · 매우 쉬움</option>
+                  <option value="2">2 · 쉬움</option>
+                  <option value="3" selected>3 · 적당함</option>
+                  <option value="4">4 · 어려움</option>
+                  <option value="5">5 · 매우 어려움</option>
+                </select>
+              </label>
+              <label class="full">시각화 메모<textarea id="visualSessionNote" rows="3" placeholder="예: 컵의 손잡이는 떠올랐지만 그림자 방향은 자꾸 흐려졌다."></textarea></label>
+            </div>
+            <div class="form-actions">
+              <button id="visualSave" class="primary">시각화 세션 저장</button>
+            </div>
           </section>
 
           <section class="panel">
@@ -436,6 +517,6 @@
   </div>
 
   <div id="toast" class="toast hidden">저장되었습니다.</div>
-  <script src="app.js?v=0.5.1"></script>
+  <script src="app.js?v=0.6.0"></script>
 </body>
 </html>
